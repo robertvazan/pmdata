@@ -29,9 +29,6 @@ import one.util.streamex.*;
  */
 @DraftApi("should be several separate classes")
 public class Dialog {
-	public static Stream<String> style() {
-		return Stream.of("/dialog.css");
-	}
 	/*
 	 * It is possible to mark a point in the dialog where content will be inserted later.
 	 * This makes visible order of dialog items independent of construction order.

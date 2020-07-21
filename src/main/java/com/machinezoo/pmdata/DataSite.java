@@ -14,4 +14,12 @@ public class DataSite extends SiteConfiguration {
 	public SitePage viewer() {
 		return new DataPage();
 	}
+	@Override
+	protected void locationExtras(SiteLocation root) {
+		super.locationExtras(root);
+		root
+		.add(new SiteLocation()
+			.path("/defaults.css")
+			.resource(DataSite.class, "defaults.css"));
+	}
 }

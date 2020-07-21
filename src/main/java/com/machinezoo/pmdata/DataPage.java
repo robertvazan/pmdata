@@ -1,7 +1,6 @@
 // Part of PMData: https://pmdata.machinezoo.com
 package com.machinezoo.pmdata;
 
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.*;
 import com.google.common.base.*;
@@ -27,12 +26,10 @@ public class DataPage extends SitePage {
 	@DraftCode
 	@Override
 	public Stream<String> css() {
-		return Stream
-			/*
-			 * File normalize.css should be in resources and uploaded to CDN on demand.
-			 */
-			.of(super.css(), Stream.of("https://cdn.machinezoo.com/lib/normalize-css/4.1.1/normalize.css", "/defaults.css"), Dialog.style())
-			.flatMap(Function.identity());
+		/*
+		 * File normalize.css should be in resources and uploaded to CDN on demand.
+		 */
+		return Stream.concat(super.css(), Stream.of("https://cdn.machinezoo.com/lib/normalize-css/4.1.1/normalize.css", "/defaults.css"));
 	}
 	@Override
 	protected SiteTemplate templateSetup() {
