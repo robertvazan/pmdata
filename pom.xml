@@ -49,6 +49,63 @@
 			<version>1.0.2</version>
 		</dependency>
 		<dependency>
+			<groupId>com.machinezoo.pmsite</groupId>
+			<artifactId>pmsite</artifactId>
+			<version>0.14.1</version>
+		</dependency>
+		<dependency>
+			<groupId>one.util</groupId>
+			<artifactId>streamex</artifactId>
+			<version>0.7.2</version>
+		</dependency>
+		<dependency>
+			<!-- Used to serialize cache content output. -->
+			<groupId>com.esotericsoftware</groupId>
+			<artifactId>kryo</artifactId>
+			<version>4.0.2</version>
+		</dependency>
+		<dependency>
+			<groupId>net.sf.supercsv</groupId>
+			<artifactId>super-csv-java8</artifactId>
+			<version>2.4.0</version>
+		</dependency>
+		<dependency>
+			<!-- Used to serialize cache content and to store local preferences. -->
+			<groupId>org.mapdb</groupId>
+			<artifactId>mapdb</artifactId>
+			<version>3.0.8</version>
+			<exclusions>
+				<exclusion>
+					<!-- No idea why was this excluded, but I don't have time to investigate it. -->
+					<groupId>org.jetbrains.kotlin</groupId>
+					<artifactId>kotlin-stdlib</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.jfree</groupId>
+			<artifactId>jfreechart</artifactId>
+			<version>1.5.0</version>
+		</dependency>
+		<dependency>
+			<!-- Used to render charts into SVG. -->
+			<groupId>org.apache.xmlgraphics</groupId>
+			<artifactId>batik-all</artifactId>
+			<version>1.12</version>
+			<exclusions>
+				<exclusion>
+					<!-- This is probably some old version that conflicts with newer module-based one as far as I remember. -->
+					<groupId>xml-apis</groupId>
+					<artifactId>xml-apis</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>com.github.haifengl</groupId>
+			<artifactId>smile-plot</artifactId>
+			<version>2.0.0</version>
+		</dependency>
+		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter</artifactId>
 			<version>5.6.0</version>
@@ -71,28 +128,14 @@
 					<artifactId>maven-surefire-plugin</artifactId>
 					<version>2.22.2</version>
 				</plugin>
+				<plugin>
+					<!-- Needed for Java 11. -->
+					<artifactId>maven-compiler-plugin</artifactId>
+					<version>3.6.2</version>
+				</plugin>
 			</plugins>
 		</pluginManagement>
 		<plugins>
-			<!-- JaCoCo and Coveralls plugins are needed to generate Coveralls report. -->
-			<plugin>
-				<groupId>org.eluder.coveralls</groupId>
-				<artifactId>coveralls-maven-plugin</artifactId>
-				<version>4.3.0</version>
-			</plugin>
-			<plugin>
-				<groupId>org.jacoco</groupId>
-				<artifactId>jacoco-maven-plugin</artifactId>
-				<version>0.8.5</version>
-				<executions>
-					<execution>
-						<id>prepare-agent</id>
-						<goals>
-							<goal>prepare-agent</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
 			<!-- Maven Central releases require source, javadoc, staging, and gpg plugins. -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
