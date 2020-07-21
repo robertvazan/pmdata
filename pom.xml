@@ -141,6 +141,16 @@
 				<groupId>org.eluder.coveralls</groupId>
 				<artifactId>coveralls-maven-plugin</artifactId>
 				<version>4.3.0</version>
+				<dependencies>
+					<!-- Coveralls plugin won't run under Java 11 (still not fixed even though the bug is closed): -->
+					<!-- https://github.com/trautonen/coveralls-maven-plugin/issues/112 -->
+					<!-- This additional dependency is a woraround from https://github.com/javaparser/javaparser/pull/2054/files -->
+					<dependency>
+						<groupId>javax.xml.bind</groupId>
+						<artifactId>jaxb-api</artifactId>
+						<version>2.3.1</version>
+					</dependency>
+				</dependencies>
 			</plugin>
 			<plugin>
 				<groupId>org.jacoco</groupId>
