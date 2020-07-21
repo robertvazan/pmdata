@@ -6,7 +6,7 @@ import com.esotericsoftware.kryo.*;
 import com.esotericsoftware.kryo.io.*;
 import com.machinezoo.stagean.*;
 
-@DraftApi
+@DraftApi("should be in a bridge library kryo-commons-lang")
 public class CacheSerializers {
 	public static class PairSerializer extends Serializer<Pair<?, ?>> {
 		public PairSerializer() {
