@@ -136,23 +136,8 @@
 			</plugins>
 		</pluginManagement>
 		<plugins>
-			<!-- JaCoCo and Coveralls plugins are needed to generate Coveralls report. -->
 			<plugin>
-				<groupId>org.eluder.coveralls</groupId>
-				<artifactId>coveralls-maven-plugin</artifactId>
-				<version>4.3.0</version>
-				<dependencies>
-					<!-- Coveralls plugin won't run under Java 11 (still not fixed even though the bug is closed): -->
-					<!-- https://github.com/trautonen/coveralls-maven-plugin/issues/112 -->
-					<!-- This additional dependency is a woraround from https://github.com/javaparser/javaparser/pull/2054/files -->
-					<dependency>
-						<groupId>javax.xml.bind</groupId>
-						<artifactId>jaxb-api</artifactId>
-						<version>2.3.1</version>
-					</dependency>
-				</dependencies>
-			</plugin>
-			<plugin>
+				<!-- JaCoCo  plugin is needed to generate Codecov report. -->
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
 				<version>0.8.5</version>
@@ -161,6 +146,13 @@
 						<id>prepare-agent</id>
 						<goals>
 							<goal>prepare-agent</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>report</id>
+						<phase>test</phase>
+						<goals>
+							<goal>report</goal>
 						</goals>
 					</execution>
 				</executions>
