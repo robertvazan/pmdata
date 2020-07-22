@@ -473,6 +473,10 @@ public class Dialog {
 				CellKey other = (CellKey)obj;
 				return column == other.column && row == other.row;
 			}
+			@Override
+			public int hashCode() {
+				return 31 * row + column;
+			}
 		}
 		private final Map<CellKey, Cell> cells = new HashMap<>();
 		public Cell add(String column, DomContent content) {
