@@ -137,7 +137,7 @@
 		</pluginManagement>
 		<plugins>
 			<plugin>
-				<!-- JaCoCo  plugin is needed to generate Codecov report. -->
+				<!-- JaCoCo plugin is needed to generate Codecov report. -->
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
 				<version>0.8.5</version>
