@@ -142,6 +142,7 @@
 				<artifactId>jacoco-maven-plugin</artifactId>
 				<version>0.8.5</version>
 				<executions>
+					<!-- Configuration taken from: https://github.com/codecov/example-java/blob/master/pom.xml#L38-L56 -->
 					<execution>
 						<id>prepare-agent</id>
 						<goals>
