@@ -135,7 +135,6 @@ main > article figcaption {
 }
 main > article img, main > article svg {
 	display: block;
-	width: calc(100% - 2px);
 	max-width: calc(100% - 2px);
 	height: auto;
 	border: 1px solid #ddd;
@@ -161,6 +160,9 @@ main > article .image-175 {
 }
 main > article .image-200 {
 	width: 1600px;
+}
+main > article .image-250 {
+	width: 2000px;
 }
 main > article blockquote {
 	max-width: calc(100% - 40px);

@@ -296,18 +296,14 @@ public class Dialog {
 			return this;
 		}
 		/*
-		 * We have no way to determine reasonable maximum image width.
-		 * We default to full screen width, because it preserves most information.
-		 * We don't want to add extra UI for enlarging the image,
-		 * because that just shifts the problem onto user's shoulders.
-		 * Code that creates the image should either know what size is appropriate
-		 * or it should expose parameters that defer the decision to higher level code.
+		 * We have no way to determine reasonable maximum image width, so by default we ask.
+		 * If the code that creates the image knows what size is appropriate, it should specify it.
 		 * 
 		 * Our CSS really supports only a few scale factors while we allow setting arbitrary integer factor here.
 		 * Exposing specialized methods like scale125() would make the score hard to use when scaling is dynamically determined.
 		 * Enum would be more type-safe, but it would be also more verbose and it would complicate dynamic size calculations.
 		 */
-		private int scale;
+		private int scale = -1;
 		public Dialog.Viewer scale(int scale) {
 			this.scale = scale;
 			return this;
@@ -327,6 +323,7 @@ public class Dialog {
 					.width(size.width)
 					.height(size.height);
 			}
+			int scale = this.scale >= 0 ? this.scale : pickInt("Image size", new int[] { 50, 75, 100, 125, 150, 175, 200, 250, 0 }, 100, n -> n > 0 ? n + "%" : "Auto");
 			try (var figure = figure(title)) {
 				SiteDialog.out()
 					.add(img

@@ -338,7 +338,7 @@ public class Charts {
 			this.labelX = labelX;
 			this.labelY = labelY;
 		}
-		private int scale;
+		private int scale = -1;
 		private int width = defaultWidth;
 		private int height = defaultHeight;
 		public XY size(int scale, int width, int height) {
@@ -348,7 +348,7 @@ public class Charts {
 			return this;
 		}
 		public XY size(int width, int height) {
-			return size(0, width, height);
+			return size(-1, width, height);
 		}
 		public XY size(int scale) {
 			return size(scale, scale * defaultWidth / 100, scale * defaultHeight / 100);
