@@ -15,9 +15,9 @@ import javax.imageio.*;
 import javax.imageio.plugins.jpeg.*;
 import javax.imageio.stream.*;
 import com.google.common.collect.Streams;
+import com.machinezoo.hookless.prefs.*;
 import com.machinezoo.noexception.*;
 import com.machinezoo.pmsite.*;
-import com.machinezoo.pmsite.preferences.*;
 import com.machinezoo.pushmode.dom.*;
 import com.machinezoo.stagean.*;
 import it.unimi.dsi.fastutil.objects.*;
@@ -730,14 +730,18 @@ public class Dialog {
 				map.remove(key);
 		});
 	}
-	public static Binding<String> bindString(StringPreference preference) {
-		return bind(preference::get, preference::set);
+	public static Binding<String> bindString(ReactivePreferences preferences, String key) {
+		return bind(() -> preferences.get(key, null), v -> preferences.put(key, v));
 	}
-	public static <T extends Enum<T>> Binding<T> bindEnum(EnumPreference<T> preference) {
-		return bind(preference::get, preference::set);
+	@SuppressWarnings("unchecked")
+	public static <T extends Enum<T>> Binding<T> bindEnum(ReactivePreferences preferences, String key, T fallback) {
+		Class<T> clazz = (Class<T>)fallback.getClass();
+		return bind(
+			() -> Exceptions.silence().get(() -> Enum.valueOf(clazz, preferences.get(key, fallback.name()))).orElse(fallback),
+			v -> preferences.put(key, v.name()));
 	}
-	public static IntBinding bindInt(IntPreference preference) {
-		return bindInt(preference::get, preference::set);
+	public static IntBinding bindInt(ReactivePreferences preferences, String key, int fallback) {
+		return bindInt(() -> preferences.getInt(key, fallback), v -> preferences.putInt(key, v));
 	}
 	/*
 	 * Many controls have both a builder implementation and several method implementations.
@@ -755,7 +759,7 @@ public class Dialog {
 			return this;
 		}
 		public Editor fallback(String fallback) {
-			return binding(bindString(SiteDialog.slot(title).preferences().key("text").asString(fallback)));
+			return binding(bindString(SiteDialog.slot(title).preferences(), "text").orElse(fallback));
 		}
 		public String render() {
 			/*
@@ -832,7 +836,7 @@ public class Dialog {
 		return new Picker<String>()
 			.title(title)
 			.items(Arrays.asList(items))
-			.binding(bindString(SiteDialog.slot(title).preferences().key("selected").asString(items[0])))
+			.binding(bindString(SiteDialog.slot(title).preferences(), "selected").orElse(items[0]))
 			.render();
 	}
 	/*
@@ -898,7 +902,7 @@ public class Dialog {
 			if (cases.contains(label))
 				throw new IllegalArgumentException("Duplicate case label.");
 			if (binding == null) {
-				binding = bindString(SiteDialog.slot(title).preferences().key("selected").asString(label));
+				binding = bindString(SiteDialog.slot(title).preferences(), "selected").orElse(label);
 				selected = binding.get();
 			}
 			cases.add(label);
@@ -996,7 +1000,7 @@ public class Dialog {
 			if (fallback == null)
 				fallback = Streams.stream(subset).findFirst().orElseThrow();
 			if (binding == null)
-				binding = bindEnum(SiteDialog.slot(title).preferences().key("selected").asEnum(fallback));
+				binding = bindEnum(SiteDialog.slot(title).preferences(), "selected", fallback);
 			return new Picker<T>().title(title).items(subset).binding(binding.orElse(fallback)).naming(naming).render();
 		}
 	}
@@ -1066,7 +1070,7 @@ public class Dialog {
 			if (fallback == null)
 				fallback = list.stream().findFirst().orElseThrow();
 			if (binding == null)
-				binding = bindInt(SiteDialog.slot(title).preferences().key("selected").asInt(fallback));
+				binding = bindInt(SiteDialog.slot(title).preferences(), "selected", fallback);
 			return new Picker<Integer>().title(title).items(list).binding(binding.boxed(fallback)).naming(n -> naming.apply(n)).render();
 		}
 	}

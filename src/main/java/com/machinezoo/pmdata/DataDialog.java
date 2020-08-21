@@ -68,15 +68,14 @@ public class DataDialog {
 	private void table(List<BlobCache.Dependency> dependencies) {
 		if (dependencies.isEmpty())
 			return;
-		var showKey = slot.preferences().key("show-dependencies").asBoolean(false);
-		boolean shown = showKey.get();
+		boolean shown = slot.preferences().getBoolean("show-dependencies", false);
 		Dialog.notice(new DomFragment()
 			.add("Content above relies on BLOB cache (")
 			.add(Html.button()
 				.id(slot.nested("show-dependencies").id())
 				.clazz("link-button")
 				.add(shown ? "hide" : "show")
-				.onclick(() -> showKey.set(!shown)))
+				.onclick(() -> slot.preferences().putBoolean("show-dependencies", !shown)))
 			.add(")."));
 		var caches = new ArrayList<BlobCache>();
 		for (var dependency : dependencies)

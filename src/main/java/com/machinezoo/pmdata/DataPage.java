@@ -1,11 +1,8 @@
 // Part of PMData: https://pmdata.machinezoo.com
 package com.machinezoo.pmdata;
 
-import java.util.function.Supplier;
 import java.util.stream.*;
-import com.google.common.base.*;
 import com.machinezoo.pmsite.*;
-import com.machinezoo.pmsite.preferences.*;
 import com.machinezoo.stagean.*;
 
 @DraftApi
@@ -16,12 +13,6 @@ public class DataPage extends SitePage {
 		if (site != null)
 			return (DataSite)site;
 		return null;
-	}
-	private final Supplier<PreferenceStorage> preferences =
-		Suppliers.memoize(() -> PreferenceStorage.chained(super.preferences(), new MapDbPreferences()).group(getClass()).pinned());
-	@Override
-	public PreferenceStorage preferences() {
-		return preferences.get();
 	}
 	@DraftCode
 	@Override
