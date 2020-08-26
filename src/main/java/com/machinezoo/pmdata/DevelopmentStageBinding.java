@@ -23,7 +23,8 @@ public class DevelopmentStageBinding extends SiteBinding {
 	}
 	@Override
 	public DomContent expand(SiteBindingContext context) {
-		try (var dialog = new SiteDialog(null)) {
+		var fragment = SiteFragment.temporary();
+		try (var scope = fragment.open()) {
 			Dialog.notice(new DomFragment()
 				.add(Html.b().add(title))
 				.add(Html.br())
@@ -32,8 +33,8 @@ public class DevelopmentStageBinding extends SiteBinding {
 					.add(Html.br())
 					.add(leadin + " ")
 					.add(context.source().children())));
-			return dialog.content();
 		}
+		return fragment.content();
 	}
 	public static final DevelopmentStageBinding stub() {
 		return new DevelopmentStageBinding("stub", "Stub article", "This page is a placeholder for future article.", "Notes:");

@@ -28,7 +28,7 @@ import smile.plot.*;
 
 /*
  * This is narrowly specialized charting API to be used in data science.
- * The API is designed to be as concise as possible and to render into SiteDialog.
+ * The API is designed to be as concise as possible and to render into SiteFragment.
  * 
  * There are several libraries producing charts. This class chooses best one for every chart type.
  * Currently we only support JFreeChart and Smile. Here are reasons for exclusion of others:

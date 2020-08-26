@@ -24,7 +24,7 @@ import it.unimi.dsi.fastutil.objects.*;
 import one.util.streamex.*;
 
 /*
- * These controls are designed for SiteDialog. They return value while rendering into thread-local context.
+ * These controls are designed for SiteFragment. They return value while rendering into thread-local context.
  * They are designed to be very concise, because the code will be littered with them.
  */
 @DraftApi("should be several separate classes")
@@ -35,68 +35,37 @@ public class Dialog {
 	 */
 	public static class Empty {
 		/*
-		 * We need to mark the position with a cookie element, because offset could be changed by earlier Empty instances.
-		 * We cannot use empty string as a cookie, because PushMode discards empty text elements.
-		 * We cannot use empty DomFragment, because that one would be inlined and discarded upon insertion.
-		 * 
-		 * HTML doesn't have any entirely transparent element that could be inserted anywhere.
-		 * The two closest options are OUTPUT and TEMPLATE elements, perhaps even DIV.
-		 * The downside of OUTPUT is that it could have heavy CSS styling attached to it.
-		 * This applies to a lesser extent to DIV too. TEMPLATE element is not rendered, so it doesn't have this problem.
-		 * 
-		 * It is however not a good form to leave junk in the output HTML.
-		 * Calling code should ensure the placeholder is either replaced or discarded.
+		 * This functionality can be accomplished in several ways. There's no perfect solution.
+		 * We could just remember current position in the SiteFragment and then insert at this position later,
+		 * but that would fail when earlier empty widgets get substituted and our insertion point moves.
+		 * We can add a marker element (probably TEMPLATE as it has no effect on rendering if left in place),
+		 * then search for it and replace it, which would work well while SiteFragment's content is still being updated,
+		 * but once SiteFragment's content is consumed (e.g. by merging it into parent SiteFragment)
+		 * our writes to SiteFragment's content will not reach the user.
+		 * We will have to use auxiliary container element and leave it in generated HTML.
+		 * The least semantic elements are DIV and SPAN. Calling code will have to pick the more suitable one.
+		 * We can minimize impact on page layout with "display: contents" in CSS.
 		 */
-		private final DomElement cookie = Html.template();
-		/*
-		 * Remember current dialog's container reference as replacement could happen while nested dialog is active.
-		 */
-		private final DomContainer container;
-		/*
-		 * While this class is designed to work with SiteDialog, we allow specifying arbitrary DomContainer.
-		 * That is particularly important for labeled content like pickers.
-		 */
-		public Empty(DomContainer container) {
-			this.container = container;
-			container.add(cookie);
+		private final DomElement content;
+		public DomElement content() {
+			return content;
 		}
-		public Empty() {
-			this(SiteDialog.out());
+		private Empty(DomElement container) {
+			this.content = container;
+			SiteFragment.get().add(content);
 		}
-		/*
-		 * This must be called when dialog is still active.
-		 * Replacement on already closed dialog will have no effect.
-		 */
-		public void replace(DomContent content) {
-			/*
-			 * PushMode child list is immutable. We will have to completely replace it.
-			 * We therefore have to make a copy of it before calling clear().
-			 */
-			var children = new ArrayList<>(container.children());
-			for (int i = 0; i < children.size(); ++i) {
-				/*
-				 * Do not use List.indexOf() as that one would use equality instead of reference comparison,
-				 * which would not only be slow, it would also treat all TEMPLATE elements as equal,
-				 * so multiple Empty placeholders would be mixed up.
-				 */
-				if (children.get(i) == cookie) {
-					container.children().clear();
-					container.add(children.subList(0, i));
-					container.add(content);
-					container.add(children.subList(i + 1, children.size()));
-					break;
-				}
-			}
+		public static Empty block() {
+			return new Empty(Html.div().clazz("transparent-container"));
 		}
-		public void discard() {
-			replace(null);
+		public static Empty inline() {
+			return new Empty(Html.span().clazz("transparent-container"));
 		}
 	}
 	/*
 	 * Wikipedia-like notices. We support the same levels as in logging: info, warning, error.
 	 */
 	private static void notice(String clazz, DomContent content) {
-		SiteDialog.out()
+		SiteFragment.get()
 			.add(Html.aside()
 				.clazz(clazz)
 				.add(content));
@@ -129,65 +98,53 @@ public class Dialog {
 		fail(String.format(format, args));
 	}
 	/*
-	 * Get rid of the checked exception on AutoCloseable.
-	 */
-	public static interface Scope extends AutoCloseable {
-		@Override
-		void close();
-	}
-	/*
 	 * It is sometimes efficient to create large dialogs that are more akin to tables than forms.
 	 * While tables might be sometimes preferable, they have issues with horizontal space and flexibility.
 	 * Dialog sections are more general at the cost of some verbosity.
 	 * 
-	 * Return Scope instead of SiteDialog, because implementation may change in the future.
+	 * Return Scope instead of SiteFragment, because implementation may change in the future.
 	 */
-	public static Scope section(String id) {
-		var context = SiteDialog.out().children();
+	public static CloseableScope section(String id) {
+		var context = SiteFragment.get().content().children();
 		if (!context.isEmpty()) {
 			var last = context.get(context.size() - 1);
 			if (!(last instanceof DomElement) || !((DomElement)last).tagname().equals("hr"))
-				SiteDialog.out().add(Html.hr());
+				SiteFragment.get().add(Html.hr());
 		}
 		var section = Html.section();
-		SiteDialog.out()
+		SiteFragment.get()
 			.add(section)
 			.add(Html.hr());
-		var dialog = new SiteDialog(SiteDialog.slot(id), section);
-		return new Scope() {
-			@Override
-			public void close() {
-				dialog.close();
-			}
+		var fragment = SiteFragment.get().nest(id);
+		var scope = fragment.open();
+		return () -> {
+			scope.close();
+			section.add(fragment.content());
 		};
 	}
 	/*
 	 * Figure may contain multiple items. Using try-with-resources for it is a neat way to allow that.
 	 * Caption may contain links and what not, so we allow arbitrary DomContent in it.
 	 */
-	public static Scope figure(DomContent caption) {
+	public static CloseableScope figure(DomContent caption) {
 		/*
 		 * We want to make all captions optional by simply passing in null instead of the caption.
 		 */
 		if (caption == null) {
-			return new Scope() {
-				@Override
-				public void close() {
-				}
+			return () -> {
 			};
 		}
-		DomElement container = Html.figure();
-		SiteDialog.out().add(container);
-		SiteDialog dialog = new SiteDialog(SiteDialog.slot(caption.text()), container);
-		return new Scope() {
-			@Override
-			public void close() {
-				container.add(Html.figcaption().add(caption));
-				dialog.close();
-			}
+		var figure = Html.figure();
+		SiteFragment.get().content().add(figure);
+		var fragment = SiteFragment.get().nest(caption.text());
+		var scope = fragment.open();
+		return () -> {
+			scope.close();
+			figure.add(fragment.content());
+			figure.add(Html.figcaption().add(caption));
 		};
 	}
-	public static Scope figure(String caption) {
+	public static CloseableScope figure(String caption) {
 		/*
 		 * Make sure not to wrap null, which signals no caption at all.
 		 */
@@ -325,7 +282,7 @@ public class Dialog {
 			}
 			int scale = this.scale >= 0 ? this.scale : pickInt("Image size", new int[] { 50, 75, 100, 125, 150, 175, 200, 250, 0 }, 100, n -> n > 0 ? n + "%" : "Auto");
 			try (var figure = figure(title)) {
-				SiteDialog.out()
+				SiteFragment.get()
 					.add(img
 						/*
 						 * TODO: We should probably round the scale factor to the nearest value supported by CSS.
@@ -545,7 +502,7 @@ public class Dialog {
 					 * This saves us from doing fancy tricks to reformat the table for narrow screens.
 					 * It's also much nicer UI than breaking the table down into a sequence of property lists.
 					 */
-					SiteDialog.out()
+					SiteFragment.get()
 						.add(Html.div().clazz("horizontal-scroll")
 							.add(Html.table().clazz("table")
 								.add(Html.thead()
@@ -588,9 +545,10 @@ public class Dialog {
 	 */
 	public static class Label implements AutoCloseable {
 		private final DomElement dd;
-		private final SiteDialog dialog;
+		private final SiteFragment fragment;
+		private final CloseableScope scope;
 		public Label(String title, String clazz) {
-			List<DomContent> children = SiteDialog.out().children();
+			List<DomContent> children = SiteFragment.get().content().children();
 			DomElement container = null;
 			if (!children.isEmpty()) {
 				DomContent last = children.get(children.size() - 1);
@@ -603,14 +561,15 @@ public class Dialog {
 			if (container == null) {
 				container = Html.dl()
 					.clazz("labelled-group");
-				SiteDialog.out().add(container);
+				SiteFragment.get().add(container);
 			}
+			fragment = SiteFragment.get().nest(title);
 			container
 				.add(Html.dt()
-					.key(SiteDialog.slot(title).nested("label").id())
+					.key(fragment.elementId("label"))
 					.add(title))
 				.add(dd = Html.dd()
-					.key(SiteDialog.slot(title).nested("content").id())
+					.key(fragment.elementId("content"))
 					/*
 					 * Since all controls are in one big dl list and we don't want to insert intermediate divs here,
 					 * we will apply control-specific CSS class on dd element. Label shouldn't have custom style anyway.
@@ -619,22 +578,20 @@ public class Dialog {
 					 * We might change this in the future in case something needs the div grouping.
 					 */
 					.clazz(clazz));
-			/*
-			 * Use the DD element as the container as otherwise Empty would not work inside the label.
-			 */
-			dialog = new SiteDialog(SiteDialog.slot(title), dd);
+			scope = fragment.open();
 		}
 		public Label(String title) {
 			this(title, null);
 		}
 		@Override
 		public void close() {
-			dialog.close();
+			scope.close();
+			dd.add(fragment.content());
 		}
 	}
 	public static void label(String title, String clazz, DomContent content) {
 		try (var label = new Label(title, clazz)) {
-			SiteDialog.out().add(content);
+			SiteFragment.get().add(content);
 		}
 	}
 	public static void label(String title, DomContent content) {
@@ -759,7 +716,7 @@ public class Dialog {
 			return this;
 		}
 		public Editor fallback(String fallback) {
-			return binding(bindString(SiteDialog.slot(title).preferences(), "text").orElse(fallback));
+			return binding(bindString(SiteFragment.get().preferences(), title).orElse(fallback));
 		}
 		public String render() {
 			/*
@@ -767,7 +724,7 @@ public class Dialog {
 			 */
 			binding = binding.orElse("");
 			label(title, "text-picker", Html.input()
-				.id(SiteDialog.slot(title).id())
+				.id(SiteFragment.get().elementId(title))
 				.type("text")
 				.value(binding.get(), binding::set));
 			return binding.get();
@@ -822,7 +779,7 @@ public class Dialog {
 					.map(v -> Html.li()
 						.clazz(Objects.equals(current, v) ? "list-picker-current" : null)
 						.add(Html.button()
-							.id(SiteDialog.slot(title).nested(naming.apply(v)).id())
+							.id(SiteFragment.get().elementId(title, naming.apply(v)))
 							.onclick(() -> binding.set(v))
 							.add(naming.apply(v))))));
 			return current;
@@ -836,7 +793,7 @@ public class Dialog {
 		return new Picker<String>()
 			.title(title)
 			.items(Arrays.asList(items))
-			.binding(bindString(SiteDialog.slot(title).preferences(), "selected").orElse(items[0]))
+			.binding(bindString(SiteFragment.get().preferences(), title).orElse(items[0]))
 			.render();
 	}
 	/*
@@ -890,19 +847,19 @@ public class Dialog {
 		private Binding<String> binding;
 		private String selected;
 		private final List<String> cases = new ArrayList<>();
-		private final Empty placeholder;
+		private final Empty empty;
 		private boolean taken;
 		public CasePicker(String title) {
 			this.title = title;
 			try (var label = new Label(title, "list-picker")) {
-				placeholder = new Empty();
+				empty = Empty.block();
 			}
 		}
 		public boolean is(String label) {
 			if (cases.contains(label))
 				throw new IllegalArgumentException("Duplicate case label.");
 			if (binding == null) {
-				binding = bindString(SiteDialog.slot(title).preferences(), "selected").orElse(label);
+				binding = bindString(SiteFragment.get().preferences(), title).orElse(label);
 				selected = binding.get();
 			}
 			cases.add(label);
@@ -916,39 +873,22 @@ public class Dialog {
 			 * It is most likely caused by an exception thrown in the try block before first case was tested.
 			 */
 			if (!cases.isEmpty()) {
-				try {
-					/*
-					 * This notice might appear far away from the picker itself,
-					 * because we used Empty placeholder and lots of other content could have been added meantime.
-					 * We don't want to push it into the labeled control list where it could face layout issues.
-					 * In the typical scenario however, if no case is taken, nothing is rendered
-					 * and the notice appears directly under to case picker.
-					 */
-					if (!taken)
-						warn("Nothing selected. Pick one option manually: %s", title);
-					/*
-					 * This code was copied from list picker. The only substantial modification is that
-					 * we will not mark any case as selected if the binding contains garbage.
-					 */
-					placeholder.replace(Html.ul()
-						.add(cases.stream()
-							.map(c -> Html.li()
-								.clazz(Objects.equals(selected, c) ? "list-picker-current" : null)
-								.add(Html.button()
-									.id(SiteDialog.slot(title).nested(c).id())
-									.onclick(() -> binding.set(c))
-									.add(c)))));
-				} catch (Throwable ex) {
-					/*
-					 * The above code should never throw exceptions, especially when the try block terminates early.
-					 * If it does throw, we don't want to propagate the exception as it could hide exception from try block.
-					 * We will at least log the exception.
-					 */
-					Exceptions.log().handle(ex);
-					/*
-					 * Don't allow unused placeholder to escape to output HTML.
-					 */
-					placeholder.discard();
+				/*
+				 * This code was copied from list picker. The only substantial modification is that
+				 * we will not mark any case as selected if the binding contains garbage.
+				 */
+				empty.content().add(Html.ul()
+					.add(cases.stream()
+						.map(c -> Html.li()
+							.clazz(Objects.equals(selected, c) ? "list-picker-current" : null)
+							.add(Html.button()
+								.id(SiteFragment.get().elementId(title, c))
+								.onclick(() -> binding.set(c))
+								.add(c)))));
+				if (!taken) {
+					SiteFragment.temporary()
+						.run(() -> warn("Nothing selected. Pick one option manually."))
+						.render(empty.content());
 				}
 			}
 		}
@@ -1000,7 +940,7 @@ public class Dialog {
 			if (fallback == null)
 				fallback = Streams.stream(subset).findFirst().orElseThrow();
 			if (binding == null)
-				binding = bindEnum(SiteDialog.slot(title).preferences(), "selected", fallback);
+				binding = bindEnum(SiteFragment.get().preferences(), title, fallback);
 			return new Picker<T>().title(title).items(subset).binding(binding.orElse(fallback)).naming(naming).render();
 		}
 	}
@@ -1070,7 +1010,7 @@ public class Dialog {
 			if (fallback == null)
 				fallback = list.stream().findFirst().orElseThrow();
 			if (binding == null)
-				binding = bindInt(SiteDialog.slot(title).preferences(), "selected", fallback);
+				binding = bindInt(SiteFragment.get().preferences(), title, fallback);
 			return new Picker<Integer>().title(title).items(list).binding(binding.boxed(fallback)).naming(n -> naming.apply(n)).render();
 		}
 	}
@@ -1101,7 +1041,7 @@ public class Dialog {
 		 * Buttons are shown in a row, so we need a container element around them.
 		 * Container element also makes it easy to align buttons with the text column.
 		 */
-		List<DomContent> children = SiteDialog.out().children();
+		List<DomContent> children = SiteFragment.get().content().children();
 		DomElement container = null;
 		if (!children.isEmpty()) {
 			DomContent last = children.get(children.size() - 1);
@@ -1114,11 +1054,11 @@ public class Dialog {
 		if (container == null) {
 			container = Html.div()
 				.clazz("dialog-buttons");
-			SiteDialog.out().add(container);
+			SiteFragment.get().add(container);
 		}
 		container
 			.add(Html.button()
-				.id(SiteDialog.slot(name).id())
+				.id(SiteFragment.get().elementId(name))
 				.add(name)
 				/*
 				 * TODO: Need exception handler here. Exception should be shown until next run.

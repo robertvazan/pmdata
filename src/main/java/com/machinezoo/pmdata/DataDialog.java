@@ -4,7 +4,7 @@ package com.machinezoo.pmdata;
 import java.nio.file.*;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.function.*;
+import com.google.common.cache.*;
 import com.machinezoo.hookless.*;
 import com.machinezoo.noexception.*;
 import com.machinezoo.pmsite.*;
@@ -14,22 +14,23 @@ import one.util.streamex.*;
 
 @DraftApi
 public class DataDialog {
-	private final SiteSlot slot;
+	private final SiteFragment.Key key;
 	private final Runnable runnable;
-	public DataDialog(SiteSlot slot, Runnable runnable) {
-		this.slot = slot;
+	private DataDialog(Runnable runnable) {
+		this.key = SiteFragment.get().key();
 		this.runnable = runnable;
 	}
 	private static class CachedContent {
-		private final DomContent content;
+		private final SiteFragment fragment;
 		private final List<BlobCache.Dependency> dependencies;
-		CachedContent(DomContent content, List<BlobCache.Dependency> dependencies) {
-			this.content = content;
+		CachedContent(SiteFragment fragment, List<BlobCache.Dependency> dependencies) {
+			this.fragment = fragment;
 			this.dependencies = dependencies;
 		}
 	}
 	private CachedContent evaluate() {
-		try (SiteDialog dialog = new SiteDialog(slot)) {
+		var fragment = SiteFragment.forKey(key);
+		try (var scope = fragment.open()) {
 			try (var tracker = new BlobCache.Tracker()) {
 				try {
 					/*
@@ -49,12 +50,9 @@ public class DataDialog {
 					 * because cache refresh may be needed to resolve the exception.
 					 */
 					Dialog.fail("Exception was thrown while generating content.");
-					SiteDialog.out().add(slot.page().handle(ex));
+					fragment.add(fragment.page().handle(ex));
 				}
-				/*
-				 * Freezing speeds up repeated rendering. Cached content should be always frozen anyway.
-				 */
-				return new CachedContent(dialog.content().freeze(), tracker.dependencies());
+				return new CachedContent(fragment, tracker.dependencies());
 			}
 		}
 	}
@@ -68,14 +66,15 @@ public class DataDialog {
 	private void table(List<BlobCache.Dependency> dependencies) {
 		if (dependencies.isEmpty())
 			return;
-		boolean shown = slot.preferences().getBoolean("show-dependencies", false);
+		var prefs = SiteFragment.get().preferences();
+		boolean shown = prefs.getBoolean("show-dependencies", false);
 		Dialog.notice(new DomFragment()
 			.add("Content above relies on BLOB cache (")
 			.add(Html.button()
-				.id(slot.nested("show-dependencies").id())
+				.id(SiteFragment.get().elementId("show-dependencies"))
 				.clazz("link-button")
 				.add(shown ? "hide" : "show")
-				.onclick(() -> slot.preferences().putBoolean("show-dependencies", !shown)))
+				.onclick(() -> prefs.putBoolean("show-dependencies", !shown)))
 			.add(")."));
 		var caches = new ArrayList<BlobCache>();
 		for (var dependency : dependencies)
@@ -95,7 +94,7 @@ public class DataDialog {
 			.findFirst();
 		if (exception.isPresent()) {
 			Dialog.fail("At least one cache has failed to refresh.");
-			SiteDialog.out().add(slot.page().handle(exception.get()));
+			SiteFragment.get().add(SiteFragment.get().page().handle(exception.get()));
 		}
 	}
 	private void row(Dialog.Table table, BlobCache cache) {
@@ -150,49 +149,57 @@ public class DataDialog {
 	}
 	private DomContent button(BlobCache cache, String title, Runnable runnable) {
 		return Html.button()
-			.id(slot.nested(cache.id.toString()).nested(title).id())
+			.id(SiteFragment.get().elementId(cache.id.toString(), title))
 			.clazz("link-button")
 			.add(title)
 			.onclick(runnable);
 	}
-	public DomContent html() {
+	/*
+	 * Caching requires a repeatable key. Unfortunately, this cache depends on Runnable.
+	 * We have no way to compare/hash Runnable instances.
+	 * We instead require fragment key to change whenever Runnable changes.
+	 * In practice, the Runnable cannot really depend on anything. It must be a method reference.
+	 * 
+	 * We will use two cache layers, one for the content itself and one for everything including cache table.
+	 * This arrangement will avoid content refresh when we just want to update cache refresh progress.
+	 */
+	private static final Cache<SiteFragment.Key, ReactiveLazy<CachedContent>> innerCache = CacheBuilder.newBuilder()
 		/*
-		 * Size-limited cache would be better for highly dynamic pages,
-		 * but this class is currently used for pages with fixed set of cache dialogs,
-		 * so we are going to be lazy and just memoize everything here.
-		 * 
-		 * Caching requires a repeatable key. Unfortunately, this cache depends on Runnable.
-		 * We have no way to compare/hash Runnable instances.
-		 * We instead require the slot to change whenever Runnable changes.
-		 * In practice, the Runnable cannot really depend on anything. It must be a method reference.
-		 * 
-		 * We will use two cache layers, one for the content itself and one for everything including cache table.
-		 * This arrangement will avoid content refresh when we just want to update cache refresh progress.
+		 * Ideally, we would like to keep entries referenced by outer cache,
+		 * but since that's not possible, we will just duplicate outer cache configuration.
 		 */
-		Supplier<CachedContent> inner = slot.local(DataDialog.class.getSimpleName() + "-inner", () -> new ReactiveLazy<>(this::evaluate));
-		Supplier<DomContent> assembler = () -> {
-			try (SiteDialog dialog = new SiteDialog(slot)) {
-				/*
-				 * Here we chain the two caches together. This might look like incorrect capture of local variable,
-				 * but SiteSlot.local() always returns the same value, because it effectively acts as a global variable,
-				 * which is safe to reference from supplier of the outer cache.
-				 */
-				CachedContent cached = inner.get();
-				SiteDialog.out().add(cached.content);
-				table(cached.dependencies);
-				/*
-				 * Freezing speeds up repeated rendering. Cached content should be always frozen anyway.
-				 */
-				return dialog.content().freeze();
-			}
-		};
-		Supplier<DomContent> outer = slot.local(DataDialog.class.getSimpleName() + "-outer", () -> new ReactiveLazy<>(assembler));
-		return outer.get();
+		.expireAfterAccess(1, TimeUnit.MINUTES)
+		.maximumSize(100)
+		.build();
+	private SiteFragment assemble() {
+		var fragment = SiteFragment.forKey(key);
+		try (var scope = fragment.open()) {
+			CachedContent inner = Exceptions.sneak().get(() -> innerCache.get(key, () -> new ReactiveLazy<>(this::evaluate))).get();
+			inner.fragment.render();
+			table(inner.dependencies);
+		}
+		return fragment;
+	}
+	private static final Cache<SiteFragment.Key, ReactiveLazy<SiteFragment>> outerCache = CacheBuilder.newBuilder()
+		/*
+		 * This is a compute cache. Assuming the computations may be expensive, consuming up to a second of compute time,
+		 * it is reasonable to cache output for a minute. We might want to make this configurable via properties.
+		 */
+		.expireAfterAccess(1, TimeUnit.MINUTES)
+		/*
+		 * Cached data may be large, perhaps containing embedded images. We should assume it might be up to 1MB large.
+		 * In that case, it is reasonable to default to a fairly low size limit, for example 100.
+		 * Reasonable size limit varies a lot with traffic and system configuration.
+		 */
+		.maximumSize(100)
+		.build();
+	private void render() {
+		Exceptions.sneak().get(() -> outerCache.get(key, () -> new ReactiveLazy<>(this::assemble))).get().render();
 	}
 	/*
 	 * Binding is actually the typical usage.
 	 */
 	public static SiteBinding binding(String name, Runnable runnable) {
-		return SiteBinding.block(name, context -> new DataDialog(context.page().slot(name), runnable).html());
+		return SiteFragment.binding(name, () -> new DataDialog(runnable).render());
 	}
 }
