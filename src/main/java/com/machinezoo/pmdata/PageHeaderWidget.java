@@ -1,9 +1,7 @@
 // Part of PMData: https://pmdata.machinezoo.com
 package com.machinezoo.pmdata;
 
-import java.net.*;
 import java.util.*;
-import com.machinezoo.noexception.*;
 import com.machinezoo.pmsite.*;
 import com.machinezoo.pushmode.dom.*;
 import com.machinezoo.stagean.*;
@@ -17,7 +15,7 @@ public class PageHeaderWidget {
 		title = page.site().title();
 	}
 	private String currentPath() {
-		return Optional.ofNullable(Exceptions.sneak().get(() -> new URI(page.request().url())).getPath()).orElse("/");
+		return page.request().url().getPath();
 	}
 	private SiteLocation currentLocation() {
 		return page.location();
