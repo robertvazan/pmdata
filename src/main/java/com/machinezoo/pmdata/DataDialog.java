@@ -171,6 +171,7 @@ public class DataDialog {
 		.expireAfterAccess(1, TimeUnit.MINUTES)
 		.maximumSize(100)
 		.build();
+	@DraftCode("configurable cache")
 	private SiteFragment assemble() {
 		var fragment = SiteFragment.forKey(key);
 		try (var scope = fragment.open()) {
@@ -193,6 +194,7 @@ public class DataDialog {
 		 */
 		.maximumSize(100)
 		.build();
+	@DraftCode("configurable cache")
 	private void render() {
 		Exceptions.sneak().get(() -> outerCache.get(key, () -> new ReactiveLazy<>(this::assemble))).get().render();
 	}

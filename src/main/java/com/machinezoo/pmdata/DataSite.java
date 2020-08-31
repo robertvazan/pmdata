@@ -15,11 +15,11 @@ public class DataSite extends SiteConfiguration {
 		return new DataPage();
 	}
 	@Override
-	protected void locationExtras(SiteLocation root) {
-		super.locationExtras(root);
+	protected void extras(SiteLocation root) {
+		super.extras(root);
 		root
-		.add(new SiteLocation()
-			.path("/defaults.css")
-			.resource(DataSite.class, "defaults.css"));
+			.add(new SiteLocation()
+				.resources(DataSite.class)
+				.asset("defaults.css"));
 	}
 }

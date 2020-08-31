@@ -23,7 +23,7 @@ public class ArticleHeaderBinding extends SiteBinding {
 				.add(breadcrumbs(context.page().location())));
 	}
 	protected String title(SiteBindingContext context) {
-		return context.template().title();
+		return context.page().location().title();
 	}
 	private DomElement breadcrumbs(SiteLocation location) {
 		if (location == null || location.parent() == null)
