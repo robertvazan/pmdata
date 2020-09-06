@@ -8,25 +8,13 @@ import com.machinezoo.stagean.*;
 
 @DraftApi
 @DraftCode("structure & CSS cleanup")
-public class ArticleHeaderBinding extends SiteBinding {
-	@Override
-	public String name() {
-		return "header";
+public class ArticleHeaderWidget {
+	protected String title() {
+		return SiteFragment.get().page().location().title();
 	}
-	@Override
-	public DomContent expand(SiteBindingContext context) {
-		return Html.header()
-			.add(Html.h1()
-				.add(title(context)))
-			.add(Html.div()
-				.clazz("article-header-details")
-				.add(breadcrumbs(context.page().location())));
-	}
-	protected String title(SiteBindingContext context) {
-		return context.page().location().title();
-	}
-	private DomElement breadcrumbs(SiteLocation location) {
-		if (location == null || location.parent() == null)
+	private DomElement breadcrumbs() {
+		var location = SiteFragment.get().page().location();
+		if (location.parent() == null)
 			return null;
 		return Html.div()
 			.clazz("article-header-breadcrumbs")
@@ -38,5 +26,17 @@ public class ArticleHeaderBinding extends SiteBinding {
 				.collect(toList())))
 			.add(" » ")
 			.add(location.breadcrumb());
+	}
+	public void render() {
+		SiteFragment.get()
+			.add(Html.header()
+				.add(Html.h1()
+					.add(title()))
+				.add(Html.div()
+					.clazz("article-header-details")
+					.add(breadcrumbs())));
+	}
+	public void register(SiteTemplate template) {
+		template.register("header", this::render);
 	}
 }

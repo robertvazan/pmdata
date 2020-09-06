@@ -1,9 +1,11 @@
 // Part of PMData: https://pmdata.machinezoo.com
 package com.machinezoo.pmdata;
 
+import java.lang.reflect.*;
 import java.nio.file.*;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.function.*;
 import com.google.common.cache.*;
 import com.machinezoo.hookless.*;
 import com.machinezoo.noexception.*;
@@ -13,13 +15,7 @@ import com.machinezoo.stagean.*;
 import one.util.streamex.*;
 
 @DraftApi
-public class DataDialog {
-	private final SiteFragment.Key key;
-	private final Runnable runnable;
-	private DataDialog(Runnable runnable) {
-		this.key = SiteFragment.get().key();
-		this.runnable = runnable;
-	}
+public class DataWidgets {
 	private static class CachedContent {
 		private final SiteFragment fragment;
 		private final List<BlobCache.Dependency> dependencies;
@@ -28,7 +24,7 @@ public class DataDialog {
 			this.dependencies = dependencies;
 		}
 	}
-	private CachedContent evaluate() {
+	private static CachedContent evaluate(SiteFragment.Key key, Runnable runnable) {
 		var fragment = SiteFragment.forKey(key);
 		try (var scope = fragment.open()) {
 			try (var tracker = new BlobCache.Tracker()) {
@@ -56,14 +52,14 @@ public class DataDialog {
 			}
 		}
 	}
-	private void sort(List<BlobCache> sorted, BlobCache next) {
+	private static void sort(List<BlobCache> sorted, BlobCache next) {
 		if (!sorted.contains(next)) {
 			for (var dependency : StreamEx.of(next.dependencies()).append(next.blockers()))
 				sort(sorted, dependency.cache());
 			sorted.add(next);
 		}
 	}
-	private void table(List<BlobCache.Dependency> dependencies) {
+	private static void table(List<BlobCache.Dependency> dependencies) {
 		if (dependencies.isEmpty())
 			return;
 		var prefs = SiteFragment.get().preferences();
@@ -97,7 +93,7 @@ public class DataDialog {
 			SiteFragment.get().add(SiteFragment.get().page().handle(exception.get()));
 		}
 	}
-	private void row(Dialog.Table table, BlobCache cache) {
+	private static void row(Dialog.Table table, BlobCache cache) {
 		table.add("Cache", cache.id).left();
 		table.add("Updated", cache.updated());
 		table.add("Refreshed", cache.refreshed());
@@ -147,7 +143,7 @@ public class DataDialog {
 			break;
 		}
 	}
-	private DomContent button(BlobCache cache, String title, Runnable runnable) {
+	private static DomContent button(BlobCache cache, String title, Runnable runnable) {
 		return Html.button()
 			.id(SiteFragment.get().elementId(cache.id.toString(), title))
 			.clazz("link-button")
@@ -172,10 +168,10 @@ public class DataDialog {
 		.maximumSize(100)
 		.build();
 	@DraftCode("configurable cache")
-	private SiteFragment assemble() {
+	private static SiteFragment assemble(SiteFragment.Key key, Runnable runnable) {
 		var fragment = SiteFragment.forKey(key);
 		try (var scope = fragment.open()) {
-			CachedContent inner = Exceptions.sneak().get(() -> innerCache.get(key, () -> new ReactiveLazy<>(this::evaluate))).get();
+			CachedContent inner = Exceptions.sneak().get(() -> innerCache.get(key, () -> new ReactiveLazy<>(() -> evaluate(key, runnable)))).get();
 			inner.fragment.render();
 			table(inner.dependencies);
 		}
@@ -195,13 +191,83 @@ public class DataDialog {
 		.maximumSize(100)
 		.build();
 	@DraftCode("configurable cache")
-	private void render() {
-		Exceptions.sneak().get(() -> outerCache.get(key, () -> new ReactiveLazy<>(this::assemble))).get().render();
+	private static void execute(Runnable runnable) {
+		var key = SiteFragment.get().key();
+		Exceptions.sneak().get(() -> outerCache.get(key, () -> new ReactiveLazy<>(() -> assemble(key, runnable)))).get().render();
 	}
 	/*
-	 * Binding is actually the typical usage.
+	 * Code below is almost identical to SiteWidget code. The only difference is that the method call is wrapped to allow for caching.
 	 */
-	public static SiteBinding binding(String name, Runnable runnable) {
-		return SiteFragment.binding(name, () -> new DataDialog(runnable).render());
+	private static class WidgetMethod {
+		final String name;
+		final Method method;
+		final boolean isStatic;
+		volatile boolean accessible;
+		final List<Supplier<Object>> suppliers = new ArrayList<>();
+		final Consumer<Object> consumer;
+		WidgetMethod(Method method, DataWidget annotation) {
+			name = !annotation.name().isBlank() ? annotation.name() : !annotation.value().isBlank() ? annotation.value() : method.getName();
+			this.method = method;
+			isStatic = Modifier.isStatic(method.getModifiers());
+			if (isStatic) {
+				if (!method.canAccess(null))
+					method.setAccessible(true);
+				accessible = true;
+			}
+			for (var parameter : method.getParameters()) {
+				if (parameter.getType() == String.class) {
+					var pname = parameter.getName();
+					suppliers.add(() -> SiteTemplate.consume(pname));
+				} else if (parameter.getType() == DomElement.class)
+					suppliers.add(() -> SiteTemplate.element());
+				else if (DomContent.class.isAssignableFrom(parameter.getType())) {
+					suppliers.add(() -> {
+						var children = SiteTemplate.element().children();
+						return children.isEmpty() ? null : new DomFragment().add(children);
+					});
+				} else
+					throw new IllegalArgumentException("Unsupported parameter type: " + parameter.getParameterizedType());
+			}
+			if (DomContent.class.isAssignableFrom(method.getReturnType()))
+				consumer = r -> SiteFragment.get().add((DomContent)r);
+			else if (method.getReturnType() == void.class) {
+				consumer = r -> {
+				};
+			} else
+				throw new IllegalArgumentException("Unsupported return type: " + method.getReturnType());
+		}
+		Runnable runnable(Object object) {
+			if (!isStatic && !accessible && !method.canAccess(object)) {
+				method.setAccessible(true);
+				accessible = true;
+			}
+			return () -> execute(Exceptions.wrap().runnable(() -> consumer.accept(method.invoke(object, suppliers.stream().map(p -> p.get()).toArray(Object[]::new)))));
+		}
+	}
+	private static List<WidgetMethod> compile(Class<?> clazz) {
+		if (clazz.getSuperclass() == null)
+			return new ArrayList<>();
+		var widgets = compile(clazz.getSuperclass());
+		for (var method : clazz.getDeclaredMethods()) {
+			var annotation = method.getAnnotation(DataWidget.class);
+			if (annotation != null)
+				widgets.add(new WidgetMethod(method, annotation));
+		}
+		return widgets;
+	}
+	private static Map<Class<?>, List<WidgetMethod>> cache = new HashMap<>();
+	private static synchronized List<WidgetMethod> widgets(Class<?> clazz) {
+		return cache.computeIfAbsent(clazz, DataWidgets::compile);
+	}
+	public static void register(Class<?> clazz, SiteTemplate template) {
+		for (var widget : widgets(clazz))
+			if (widget.isStatic)
+				template.register(widget.name, widget.runnable(null));
+	}
+	public static void register(Object object, SiteTemplate template) {
+		register(object.getClass(), template);
+		for (var widget : widgets(object.getClass()))
+			if (!widget.isStatic)
+				template.register(widget.name, widget.runnable(object));
 	}
 }

@@ -23,11 +23,10 @@ public class DataPage extends SitePage {
 		return Stream.concat(super.css(), Stream.of("https://cdn.machinezoo.com/lib/normalize-css/4.1.1/normalize.css", "/defaults.css"));
 	}
 	@Override
-	protected void bind(SiteTemplate template) {
-		super.bind(template);
-		template
-			.bind(new ArticleHeaderBinding())
-			.bind(DevelopmentStageBinding.stub())
-			.bind(DevelopmentStageBinding.draft());
+	protected void widgets(SiteTemplate template) {
+		super.widgets(template);
+		DataWidgets.register(this, template);
+		new ArticleHeaderWidget().register(template);
+		DevelopmentStageWidget.registerAll(template);
 	}
 }
