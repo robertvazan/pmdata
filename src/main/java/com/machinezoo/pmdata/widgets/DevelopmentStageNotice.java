@@ -1,17 +1,17 @@
 // Part of PMData: https://pmdata.machinezoo.com
-package com.machinezoo.pmdata;
+package com.machinezoo.pmdata.widgets;
 
 import com.machinezoo.pmsite.*;
 import com.machinezoo.pushmode.dom.*;
 import com.machinezoo.stagean.*;
 
 @DraftApi
-public abstract class DevelopmentStageWidget {
+public abstract class DevelopmentStageNotice {
 	protected abstract String name();
 	protected abstract String title();
 	protected abstract String description();
 	protected abstract String leadin();
-	public static class Stub extends DevelopmentStageWidget {
+	public static class Stub extends DevelopmentStageNotice {
 		@Override
 		protected String name() {
 			return "stub";
@@ -29,7 +29,7 @@ public abstract class DevelopmentStageWidget {
 			return "Notes:";
 		}
 	}
-	public static class Draft extends DevelopmentStageWidget {
+	public static class Draft extends DevelopmentStageNotice {
 		@Override
 		protected String name() {
 			return "draft";
@@ -48,7 +48,7 @@ public abstract class DevelopmentStageWidget {
 		}
 	}
 	public void render(DomContent content) {
-		Dialog.notice(new DomFragment()
+		Notice.info(new DomFragment()
 			.add(Html.b().add(title()))
 			.add(Html.br())
 			.add(description())

@@ -2,6 +2,7 @@
 package com.machinezoo.pmdata;
 
 import java.util.stream.*;
+import com.machinezoo.pmdata.widgets.*;
 import com.machinezoo.pmsite.*;
 import com.machinezoo.stagean.*;
 
@@ -26,7 +27,7 @@ public class DataPage extends SitePage {
 	protected void widgets(SiteTemplate template) {
 		super.widgets(template);
 		DataWidgets.register(this, template);
-		new ArticleHeaderWidget().register(template);
-		DevelopmentStageWidget.registerAll(template);
+		new ArticleHeader().register(template);
+		DevelopmentStageNotice.registerAll(template);
 	}
 }

@@ -21,6 +21,7 @@ import org.jfree.data.statistics.*;
 import org.jfree.data.xy.*;
 import org.w3c.dom.*;
 import com.machinezoo.noexception.*;
+import com.machinezoo.pmdata.widgets.*;
 import com.machinezoo.stagean.*;
 import it.unimi.dsi.fastutil.doubles.*;
 import one.util.streamex.*;
@@ -182,61 +183,61 @@ public class Charts {
 	 * We cannot always provide a specialized chart method, so allow viewing arbitrary charts here.
 	 */
 	public static void viewSvg(int scale, int width, int height, JFreeChart chart) {
-		Dialog.view(scale, toSvg(width, height, chart));
+		ImageViewer.view(scale, toSvg(width, height, chart));
 	}
 	public static void viewSvg(int width, int height, JFreeChart chart) {
-		Dialog.view(toSvg(width, height, chart));
+		ImageViewer.view(toSvg(width, height, chart));
 	}
 	public static void viewSvg(int scale, JFreeChart chart) {
 		/*
 		 * If only scale is given, generate the image with assumption that it will be actually shown at this scale.
 		 */
-		Dialog.view(scale, toSvg(scale * defaultWidth / 100, scale * defaultHeight / 100, chart));
+		ImageViewer.view(scale, toSvg(scale * defaultWidth / 100, scale * defaultHeight / 100, chart));
 	}
 	public static void viewSvg(JFreeChart chart) {
-		Dialog.view(toSvg(chart));
+		ImageViewer.view(toSvg(chart));
 	}
 	/*
 	 * Like above, but for PlotCanvas.
 	 */
 	public static void viewSvg(int scale, int width, int height, PlotCanvas plot) {
-		Dialog.view(scale, toSvg(width, height, plot));
+		ImageViewer.view(scale, toSvg(width, height, plot));
 	}
 	public static void viewSvg(int width, int height, PlotCanvas plot) {
-		Dialog.view(toSvg(width, height, plot));
+		ImageViewer.view(toSvg(width, height, plot));
 	}
 	public static void viewSvg(int scale, PlotCanvas plot) {
-		Dialog.view(scale, toSvg(scale * defaultWidth / 100, scale * defaultHeight / 100, plot));
+		ImageViewer.view(scale, toSvg(scale * defaultWidth / 100, scale * defaultHeight / 100, plot));
 	}
 	public static void viewSvg(PlotCanvas plot) {
-		Dialog.view(toSvg(plot));
+		ImageViewer.view(toSvg(plot));
 	}
 	/*
 	 * Like above, but for PNG.
 	 */
 	public static void viewPng(int scale, int width, int height, JFreeChart chart) {
-		Dialog.view(scale, toPng(width, height, chart));
+		ImageViewer.view(scale, toPng(width, height, chart));
 	}
 	public static void viewPng(int width, int height, JFreeChart chart) {
-		Dialog.view(toPng(width, height, chart));
+		ImageViewer.view(toPng(width, height, chart));
 	}
 	public static void viewPng(int scale, JFreeChart chart) {
-		Dialog.view(scale, toPng(scale * defaultWidth / 100, scale * defaultHeight / 100, chart));
+		ImageViewer.view(scale, toPng(scale * defaultWidth / 100, scale * defaultHeight / 100, chart));
 	}
 	public static void viewPng(JFreeChart chart) {
-		Dialog.view(toPng(chart));
+		ImageViewer.view(toPng(chart));
 	}
 	public static void viewPng(int scale, int width, int height, PlotCanvas plot) {
-		Dialog.view(scale, toPng(width, height, plot));
+		ImageViewer.view(scale, toPng(width, height, plot));
 	}
 	public static void viewPng(int width, int height, PlotCanvas plot) {
-		Dialog.view(toPng(width, height, plot));
+		ImageViewer.view(toPng(width, height, plot));
 	}
 	public static void viewPng(int scale, PlotCanvas plot) {
-		Dialog.view(scale, toPng(scale * defaultWidth / 100, scale * defaultHeight / 100, plot));
+		ImageViewer.view(scale, toPng(scale * defaultWidth / 100, scale * defaultHeight / 100, plot));
 	}
 	public static void viewPng(PlotCanvas plot) {
-		Dialog.view(toPng(plot));
+		ImageViewer.view(toPng(plot));
 	}
 	/*
 	 * By default, we will always use SVG format even if we know image dimensions.
@@ -586,7 +587,7 @@ public class Charts {
 				if (data.dots)
 					renderer.setSeriesShapesVisible(i, true);
 			}
-			Dialog.view(scale, toSvg(width, height, chart));
+			ImageViewer.view(scale, toSvg(width, height, chart));
 		}
 	}
 	/*
@@ -599,7 +600,7 @@ public class Charts {
 		 */
 		values = Arrays.stream(values).filter(Double::isFinite).toArray();
 		if (values.length == 0)
-			Dialog.notice("Cannot show empty histogram: %s", title);
+			Notice.info("Cannot show empty histogram: %s", title);
 		else {
 			/*
 			 * We are using JFreeChart's default histogram chart, which has quite a lot of disadvantages.

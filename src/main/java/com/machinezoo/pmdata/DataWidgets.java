@@ -9,6 +9,7 @@ import java.util.function.*;
 import com.google.common.cache.*;
 import com.machinezoo.hookless.*;
 import com.machinezoo.noexception.*;
+import com.machinezoo.pmdata.widgets.*;
 import com.machinezoo.pmsite.*;
 import com.machinezoo.pushmode.dom.*;
 import com.machinezoo.stagean.*;
@@ -38,14 +39,14 @@ public class DataWidgets {
 					 */
 					runnable.run();
 				} catch (BlobCache.EmptyCacheException ex) {
-					Dialog.fail("Some content depends on uninitialized BLOB cache.");
+					Notice.fail("Some content depends on uninitialized BLOB cache.");
 				} catch (Throwable ex) {
 					/*
 					 * We want to catch the exception here, so that cache UI is not affected by content exceptions.
 					 * UI for persistent cache, for example, must remain visible in case of exception,
 					 * because cache refresh may be needed to resolve the exception.
 					 */
-					Dialog.fail("Exception was thrown while generating content.");
+					Notice.fail("Exception was thrown while generating content.");
 					fragment.add(fragment.page().handle(ex));
 				}
 				return new CachedContent(fragment, tracker.dependencies());
@@ -64,7 +65,7 @@ public class DataWidgets {
 			return;
 		var prefs = SiteFragment.get().preferences();
 		boolean shown = prefs.getBoolean("show-dependencies", false);
-		Dialog.notice(new DomFragment()
+		Notice.info(new DomFragment()
 			.add("Content above relies on BLOB cache (")
 			.add(Html.button()
 				.id(SiteFragment.get().elementId("show-dependencies"))
@@ -76,9 +77,9 @@ public class DataWidgets {
 		for (var dependency : dependencies)
 			sort(caches, dependency.cache());
 		if (caches.stream().flatMap(c -> c.dependencies().stream()).anyMatch(d -> !d.fresh()))
-			Dialog.warn("Some BLOB caches are stale.");
+			Notice.warn("Some BLOB caches are stale.");
 		if (shown) {
-			try (var table = new Dialog.Table("Cache dependencies")) {
+			try (var table = new PlainTable("Cache dependencies")) {
 				for (var cache : caches)
 					row(table, cache);
 			}
@@ -89,11 +90,11 @@ public class DataWidgets {
 			.nonNull()
 			.findFirst();
 		if (exception.isPresent()) {
-			Dialog.fail("At least one cache has failed to refresh.");
+			Notice.fail("At least one cache has failed to refresh.");
 			SiteFragment.get().add(SiteFragment.get().page().handle(exception.get()));
 		}
 	}
-	private static void row(Dialog.Table table, BlobCache cache) {
+	private static void row(PlainTable table, BlobCache cache) {
 		table.add("Cache", cache.id).left();
 		table.add("Updated", cache.updated());
 		table.add("Refreshed", cache.refreshed());

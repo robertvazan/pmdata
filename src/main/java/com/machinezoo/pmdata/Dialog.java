@@ -1,26 +1,16 @@
 // Part of PMData: https://pmdata.machinezoo.com
 package com.machinezoo.pmdata;
 
-import static java.util.stream.Collectors.*;
-import java.awt.*;
-import java.awt.image.*;
-import java.io.*;
-import java.nio.charset.*;
 import java.util.*;
-import java.util.List;
 import java.util.function.*;
-import java.util.regex.*;
 import java.util.stream.*;
-import javax.imageio.*;
-import javax.imageio.plugins.jpeg.*;
-import javax.imageio.stream.*;
 import com.google.common.collect.Streams;
 import com.machinezoo.hookless.prefs.*;
 import com.machinezoo.noexception.*;
+import com.machinezoo.pmdata.widgets.*;
 import com.machinezoo.pmsite.*;
 import com.machinezoo.pushmode.dom.*;
 import com.machinezoo.stagean.*;
-import it.unimi.dsi.fastutil.objects.*;
 import one.util.streamex.*;
 
 /*
@@ -30,599 +20,20 @@ import one.util.streamex.*;
 @DraftApi("should be several separate classes")
 public class Dialog {
 	/*
-	 * It is possible to mark a point in the dialog where content will be inserted later.
-	 * This makes visible order of dialog items independent of construction order.
-	 */
-	public static class Empty {
-		/*
-		 * This functionality can be accomplished in several ways. There's no perfect solution.
-		 * We could just remember current position in the SiteFragment and then insert at this position later,
-		 * but that would fail when earlier empty widgets get substituted and our insertion point moves.
-		 * We can add a marker element (probably TEMPLATE as it has no effect on rendering if left in place),
-		 * then search for it and replace it, which would work well while SiteFragment's content is still being updated,
-		 * but once SiteFragment's content is consumed (e.g. by merging it into parent SiteFragment)
-		 * our writes to SiteFragment's content will not reach the user.
-		 * We will have to use auxiliary container element and leave it in generated HTML.
-		 * The least semantic elements are DIV and SPAN. Calling code will have to pick the more suitable one.
-		 * We can minimize impact on page layout with "display: contents" in CSS.
-		 */
-		private final DomElement content;
-		public DomElement content() {
-			return content;
-		}
-		private Empty(DomElement container) {
-			this.content = container;
-			SiteFragment.get().add(content);
-		}
-		public static Empty block() {
-			return new Empty(Html.div().clazz("transparent-container"));
-		}
-		public static Empty inline() {
-			return new Empty(Html.span().clazz("transparent-container"));
-		}
-	}
-	/*
-	 * Wikipedia-like notices. We support the same levels as in logging: info, warning, error.
-	 */
-	private static void notice(String clazz, DomContent content) {
-		SiteFragment.get()
-			.add(Html.aside()
-				.clazz(clazz)
-				.add(content));
-	}
-	public static void notice(DomContent content) {
-		notice("notice", content);
-	}
-	public static void notice(String text) {
-		notice(new DomText(text));
-	}
-	public static void notice(String format, Object... args) {
-		notice(String.format(format, args));
-	}
-	public static void warn(DomContent content) {
-		notice("notice notice-warn", content);
-	}
-	public static void warn(String text) {
-		warn(new DomText(text));
-	}
-	public static void warn(String format, Object... args) {
-		warn(String.format(format, args));
-	}
-	public static void fail(DomContent content) {
-		notice("notice notice-error", content);
-	}
-	public static void fail(String text) {
-		fail(new DomText(text));
-	}
-	public static void fail(String format, Object... args) {
-		fail(String.format(format, args));
-	}
-	/*
-	 * It is sometimes efficient to create large dialogs that are more akin to tables than forms.
-	 * While tables might be sometimes preferable, they have issues with horizontal space and flexibility.
-	 * Dialog sections are more general at the cost of some verbosity.
-	 * 
-	 * Return Scope instead of SiteFragment, because implementation may change in the future.
-	 */
-	public static CloseableScope section(String id) {
-		var context = SiteFragment.get().content().children();
-		if (!context.isEmpty()) {
-			var last = context.get(context.size() - 1);
-			if (!(last instanceof DomElement) || !((DomElement)last).tagname().equals("hr"))
-				SiteFragment.get().add(Html.hr());
-		}
-		var section = Html.section();
-		SiteFragment.get()
-			.add(section)
-			.add(Html.hr());
-		var fragment = SiteFragment.get().nest(id);
-		var scope = fragment.open();
-		return () -> {
-			scope.close();
-			section.add(fragment.content());
-		};
-	}
-	/*
-	 * Figure may contain multiple items. Using try-with-resources for it is a neat way to allow that.
-	 * Caption may contain links and what not, so we allow arbitrary DomContent in it.
-	 */
-	public static CloseableScope figure(DomContent caption) {
-		/*
-		 * We want to make all captions optional by simply passing in null instead of the caption.
-		 */
-		if (caption == null) {
-			return () -> {
-			};
-		}
-		var figure = Html.figure();
-		SiteFragment.get().content().add(figure);
-		var fragment = SiteFragment.get().nest(caption.text());
-		var scope = fragment.open();
-		return () -> {
-			scope.close();
-			figure.add(fragment.content());
-			figure.add(Html.figcaption().add(caption));
-		};
-	}
-	public static CloseableScope figure(String caption) {
-		/*
-		 * Make sure not to wrap null, which signals no caption at all.
-		 */
-		return figure(caption != null ? new DomText(caption) : null);
-	}
-	/*
-	 * We will allow arbitrary images on API level and convert them to browser-compatible formats as needed.
-	 * Currently we always convert to JPEG, which is a mistake. We should have an API to specify compression.
-	 * Perhaps viewPng/viewJpeg. Or perhaps Viewer class, which would also allow CSS classes for size & border.
-	 */
-	private static String mime(byte[] image) {
-		if (image[1] == 'P' && image[2] == 'N' && image[3] == 'G')
-			return "image/png";
-		if (image[0] == (byte)0xff && image[1] == (byte)0xd8)
-			return "image/jpeg";
-		if (image[0] == (byte)0x49 && image[1] == (byte)0x49 && image[2] == (byte)0x2a)
-			return "image/tiff";
-		if (image[0] == (byte)0x4d && image[1] == (byte)0x4d && image[2] == (byte)0x2a)
-			return "image/tiff";
-		if (image[0] == '<')
-			return "image/svg+xml";
-		throw new IllegalArgumentException();
-	}
-	/*
-	 * When replacing one image with another, there is no image on the page for a short period of time.
-	 * This happens even with data URIs that should theoretically have zero download times.
-	 * When there is no image and no placeholder can be created due to missing width/height on img,
-	 * the page will be rendered without image, which means the page will be significantly shorter.
-	 * If the image appears near the end of the page, then the page will be scrolled up.
-	 * When the image is loaded a split-second later, the page won't scroll back to its original position.
-	 * This behavior will result in "jumpy" page when replacing one image with another.
-	 * To avoid that, we will try hard to include width and height attributes on every img element.
-	 * 
-	 * Width/height attributes have no effect on how the image looks when it is fully loaded.
-	 * They just result in properly sized placeholder when the image is missing.
-	 * Including width/height attributes does not interfere with CSS styling.
-	 * 
-	 * This code has been optimized to scan only image header at the cost of some code complexity.
-	 */
-	private static final Pattern viewboxRe = Pattern.compile("<svg[^>]* viewBox=\"[-0-9.]+ [-0-9.]+ ([0-9]+)(?:\\.0)? ([0-9]+)(?:\\.0)?\"");
-	private static Dimension size(byte[] image) {
-		return Exceptions.log().get(Exceptions.sneak().supplier(() -> {
-			switch (mime(image)) {
-			case "image/png":
-			case "image/jpeg":
-				// https://stackoverflow.com/a/1560052/1981276
-				try (ImageInputStream in = new MemoryCacheImageInputStream(new ByteArrayInputStream(image))) {
-					var readers = ImageIO.getImageReaders(in);
-					if (readers.hasNext()) {
-						var reader = readers.next();
-						try {
-							reader.setInput(in);
-							return new Dimension(reader.getWidth(0), reader.getHeight(0));
-						} finally {
-							reader.dispose();
-						}
-					}
-				}
-				break;
-			case "image/svg+xml":
-				/*
-				 * Examine up to one kilobyte, because JFreeChart precedes viewBox attribute with lengthy style attribute.
-				 */
-				var header = new String(Arrays.copyOf(image, Math.min(image.length, 1000)), StandardCharsets.UTF_8);
-				var matcher = viewboxRe.matcher(header);
-				if (matcher.find())
-					return new Dimension(Integer.parseInt(matcher.group(1)), Integer.parseInt(matcher.group(2)));
-				break;
-			}
-			return null;
-		})).orElse(null);
-	}
-	private static byte[] toJpeg(byte[] image) {
-		var original = Exceptions.wrap().get(() -> ImageIO.read(new ByteArrayInputStream(image)));
-		if (original == null)
-			throw new IllegalArgumentException("Unsupported image format.");
-		int width = original.getWidth();
-		int height = original.getHeight();
-		var pixels = new int[width * height];
-		original.getRGB(0, 0, width, height, pixels, 0, width);
-		var converted = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-		for (int i = 0; i < pixels.length; ++i)
-			pixels[i] |= 0xff_00_00_00;
-		converted.setRGB(0, 0, width, height, pixels, 0, width);
-		JPEGImageWriteParam params = new JPEGImageWriteParam(null);
-		params.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
-		params.setCompressionQuality(0.9f);
-		Iterator<ImageWriter> writers = ImageIO.getImageWritersByFormatName("JPEG");
-		if (!writers.hasNext())
-			throw new IllegalStateException("JPEG image writing is not supported.");
-		ImageWriter writer = writers.next();
-		ByteArrayOutputStream stream = new ByteArrayOutputStream();
-		writer.setOutput(new MemoryCacheImageOutputStream(stream));
-		Exceptions.sneak().run(() -> writer.write(null, new IIOImage(converted, null, null), params));
-		return stream.toByteArray();
-	}
-	public static class Viewer {
-		private String title;
-		public Viewer title(String title) {
-			this.title = title;
-			return this;
-		}
-		private byte[] image;
-		public Viewer image(byte[] image) {
-			this.image = image;
-			return this;
-		}
-		/*
-		 * We have no way to determine reasonable maximum image width, so by default we ask.
-		 * If the code that creates the image knows what size is appropriate, it should specify it.
-		 * 
-		 * Our CSS really supports only a few scale factors while we allow setting arbitrary integer factor here.
-		 * Exposing specialized methods like scale125() would make the score hard to use when scaling is dynamically determined.
-		 * Enum would be more type-safe, but it would be also more verbose and it would complicate dynamic size calculations.
-		 */
-		private int scale = -1;
-		public Dialog.Viewer scale(int scale) {
-			this.scale = scale;
-			return this;
-		}
-		public void render() {
-			/*
-			 * Convert formats that aren't directly supported by browsers.
-			 */
-			switch (mime(image)) {
-			case "image/tiff":
-				image = toJpeg(image);
-			}
-			var img = Html.img();
-			var size = size(image);
-			if (size != null) {
-				img
-					.width(size.width)
-					.height(size.height);
-			}
-			int scale = this.scale >= 0 ? this.scale : pickInt("Image size", new int[] { 50, 75, 100, 125, 150, 175, 200, 250, 0 }, 100, n -> n > 0 ? n + "%" : "Auto");
-			try (var figure = figure(title)) {
-				SiteFragment.get()
-					.add(img
-						/*
-						 * TODO: We should probably round the scale factor to the nearest value supported by CSS.
-						 */
-						.clazz(scale > 0 ? "image-" + scale : null)
-						/*
-						 * All images are currently embedded as data URIs, which is inefficient.
-						 * In the future, we should support automatic upload to CDN for frequently viewed images.
-						 */
-						.src("data:" + mime(image) + ";base64," + Base64.getEncoder().encodeToString(image))
-						.freeze());
-			}
-		}
-	}
-	/*
-	 * Images are common and all parameters may be used often, so provide overloads for all combinations.
-	 */
-	public static void view(byte[] image) {
-		new Viewer().image(image).render();
-	}
-	public static void view(int scale, byte[] image) {
-		new Viewer().scale(scale).image(image).render();
-	}
-	public static void view(String title, byte[] image) {
-		new Viewer().title(title).image(image).render();
-	}
-	public static void view(String title, int scale, byte[] image) {
-		new Viewer().title(title).scale(scale).image(image).render();
-	}
-	/*
-	 * HTML tables are quite verbose. We need a widget to easily produce lots of tables.
-	 * These tables are dumb. They have no built-in sorting, filtering, or pagination.
-	 * Making tables too smart prevents us from drawing attention to the particular view of the data we want to show.
-	 * Where multiple views are desirable, pickers can be used to introduce just the views that are useful.
-	 * 
-	 * Tables have closeable API for use in try-with-resources, so that we don't forget to render the constructed table.
-	 * Most other widgets don't need it, because their construction involves only a simple sequence of fluent method calls.
-	 * We could also render the table incrementally, but that's much more complicated to implement
-	 * and it might prevent us from adding features in the future.
-	 * 
-	 * There's no setter chaining to avoid spurious resource leak warnings as this class is AutoCloseable.
-	 */
-	public static class Table implements AutoCloseable {
-		private final String caption;
-		public Table(String caption) {
-			this.caption = caption;
-		}
-		public Table() {
-			this(null);
-		}
-		/*
-		 * The aim of the API is to have a simple table where we just throw data and it does everything right.
-		 * We will nevertheless need some basic styling that is commonly used in tables.
-		 * This is Pandora's box though. We have to be careful what we add here.
-		 * 
-		 * Styling is cell-specific. Header alignment follows dominant cell alignment.
-		 * Rows currently cannot be styled. We instead encourage styling the most relevant cell.
-		 */
-		private static enum Alignment {
-			CENTER, LEFT, RIGHT
-		}
-		private static enum Color {
-			YES, NO, MAYBE
-		}
-		/*
-		 * AutoCloseable with chained (this-returning) methods would trigger lots of resource leak warnings.
-		 * We will therefore force every add() call to be independent, i.e. add() calls will not return the Table.
-		 * We however want some sort of chaining for cell attributes, so we return Cell object instead that allows cell-local chaining.
-		 */
-		public static class Cell {
-			DomContent content;
-			Alignment alignment = Alignment.CENTER;
-			Color color;
-			/*
-			 * We do not expose the enums in order to keep the API small and concise.
-			 * This may result in some convoluted code when dynamic solution is needed,
-			 * but we don't care, because this table is designed for simple cases.
-			 */
-			public Cell left() {
-				alignment = Alignment.LEFT;
-				return this;
-			}
-			public Cell right() {
-				alignment = Alignment.RIGHT;
-				return this;
-			}
-			/*
-			 * Allow clearing left/right alignment.
-			 * This is useful when column is left/right-aligned by default
-			 * and exceptions are subsequently handled in a condition.
-			 */
-			public Cell center() {
-				alignment = Alignment.CENTER;
-				return this;
-			}
-			/*
-			 * There is currently no way to clear coloring, because there's no nice method name for it.
-			 * It's not a big deal, because coloring is almost never applied by default.
-			 */
-			public Cell yes() {
-				color = Color.YES;
-				return this;
-			}
-			public Cell no() {
-				color = Color.NO;
-				return this;
-			}
-			public Cell maybe() {
-				color = Color.MAYBE;
-				return this;
-			}
-		}
-		/*
-		 * Application code sometimes needs to set cell attributes conditionally and therefore without chaining.
-		 * Storing the Cell object makes the application code more verbose. We will instead provide access to the last cell as a convenience.
-		 * We could have also duplicated styling methods on Table class, but that's not necessary since most uses are unconditional.
-		 */
-		private Cell last;
-		public Cell last() {
-			return last;
-		}
-		/*
-		 * Since the table is dumb and necessarily short (due to the lack of built-in pagination),
-		 * we can afford a simpler and somewhat wasteful API to build tables with as little code as possible.
-		 * The API is imperative, so that app code can use variables for subexpressions and conditions.
-		 * We will be repeating column definitions with every cell definition,
-		 * so that column definitions can share the line of code with corresponding cell definitions.
-		 */
-		private final Object2IntMap<String> columns = new Object2IntOpenHashMap<>();
-		private int rows;
-		private static class CellKey {
-			final int column;
-			final int row;
-			CellKey(int column, int row) {
-				this.column = column;
-				this.row = row;
-			}
-			@Override
-			public boolean equals(Object obj) {
-				if (!(obj instanceof CellKey))
-					return false;
-				CellKey other = (CellKey)obj;
-				return column == other.column && row == other.row;
-			}
-			@Override
-			public int hashCode() {
-				return 31 * row + column;
-			}
-		}
-		private final Map<CellKey, Cell> cells = new HashMap<>();
-		public Cell add(String column, DomContent content) {
-			int columnAt;
-			if (columns.containsKey(column))
-				columnAt = columns.getInt(column);
-			else {
-				columnAt = columns.size();
-				columns.put(column, columnAt);
-			}
-			/*
-			 * We can avoid new row API by automatically adding a row when duplicate cell is detected.
-			 */
-			int row;
-			if (rows <= 0) {
-				row = 0;
-				rows = 1;
-			} else if (!cells.containsKey(new CellKey(columnAt, rows - 1)))
-				row = rows - 1;
-			else {
-				row = rows;
-				++rows;
-			}
-			last = new Cell();
-			last.content = content;
-			cells.put(new CellKey(columnAt, row), last);
-			return last;
-		}
-		/*
-		 * While column is in general anything that produces cell HTML, most columns are much simpler.
-		 * Nearly all columns are plain text, often simply applying a formatter to a number.
-		 */
-		public Cell add(String column, String text) {
-			return add(column, new DomText(text));
-		}
-		public Cell add(String column, String format, Object... args) {
-			return add(column, String.format(format, args));
-		}
-		/*
-		 * Table can be also asked to display arbitrary data and decide on formatting.
-		 * We will provide overloads for primitive types and one overload that takes arbitrary object.
-		 */
-		public Cell add(String column, long number) {
-			return add(column, Pretty.number(number));
-		}
-		public Cell add(String column, double number) {
-			return add(column, Pretty.number(number));
-		}
-		public Cell add(String column, Object data) {
-			return add(column, Pretty.any(data));
-		}
-		private String fallback;
-		public void fallback(String fallback) {
-			this.fallback = fallback;
-		}
-		@Override
-		public void close() {
-			if (rows == 0) {
-				if (fallback != null)
-					notice(fallback);
-				if (caption != null)
-					notice("Table is not shown, because it is empty: %s", caption);
-				else
-					notice("Table is not shown, because it is empty.");
-			} else {
-				try (var figure = Dialog.figure(caption)) {
-					/*
-					 * Standard scrolling div lets us create tables that scroll horizontally.
-					 * This saves us from doing fancy tricks to reformat the table for narrow screens.
-					 * It's also much nicer UI than breaking the table down into a sequence of property lists.
-					 */
-					SiteFragment.get()
-						.add(Html.div().clazz("horizontal-scroll")
-							.add(Html.table().clazz("table")
-								.add(Html.thead()
-									.add(Html.tr()
-										.add(columns.keySet().stream()
-											.sorted(Comparator.comparingInt(c -> columns.getInt(c)))
-											.map(column -> {
-												/*
-												 * Header alignment follows dominant cell alignment.
-												 */
-												int at = columns.getInt(column);
-												var alignments = IntStream.range(0, rows)
-													.mapToObj(r -> cells.get(new CellKey(at, r)))
-													.filter(Objects::nonNull)
-													.map(c -> c.alignment)
-													.collect(toList());
-												long left = StreamEx.of(alignments).filterBy(a -> a, Alignment.LEFT).count();
-												long right = StreamEx.of(alignments).filterBy(a -> a, Alignment.RIGHT).count();
-												return Html.th()
-													.clazz(left > alignments.size() / 2 ? "align-left" : right > alignments.size() / 2 ? "align-right" : null)
-													.add(column);
-											}))))
-								.add(Html.tbody()
-									.add(IntStream.range(0, rows)
-										.mapToObj(r -> Html.tr()
-											.add(IntStream.range(0, columns.size())
-												.mapToObj(c -> cells.get(new CellKey(c, r)))
-												.map(c -> c == null ? Html.td() : Html.td()
-													.clazz(
-														c.alignment != Alignment.CENTER ? "align-" + c.alignment.name().toLowerCase() : null,
-														c.color != null ? c.color.name().toLowerCase() : null)
-													.add(c.content))))))));
-				}
-			}
-		}
-	}
-	/*
-	 * Most of the controls will be simple pickers that will together form sort of a dialog box above controlled content.
-	 * HTML's dl/dt/dd is perfect for this. We need some clever code to merge individual controls into single dl list.
-	 */
-	public static class Label implements AutoCloseable {
-		private final DomElement dd;
-		private final SiteFragment fragment;
-		private final CloseableScope scope;
-		public Label(String title, String clazz) {
-			List<DomContent> children = SiteFragment.get().content().children();
-			DomElement container = null;
-			if (!children.isEmpty()) {
-				DomContent last = children.get(children.size() - 1);
-				if (last instanceof DomElement) {
-					DomElement element = (DomElement)last;
-					if ("labelled-group".equals(element.clazz()))
-						container = element;
-				}
-			}
-			if (container == null) {
-				container = Html.dl()
-					.clazz("labelled-group");
-				SiteFragment.get().add(container);
-			}
-			fragment = SiteFragment.get().nest(title);
-			container
-				.add(Html.dt()
-					.key(fragment.elementId("label"))
-					.add(title))
-				.add(dd = Html.dd()
-					.key(fragment.elementId("content"))
-					/*
-					 * Since all controls are in one big dl list and we don't want to insert intermediate divs here,
-					 * we will apply control-specific CSS class on dd element. Label shouldn't have custom style anyway.
-					 * 
-					 * The intermediate divs are allowed by HTML spec, but we want to keep the HTML code simple.
-					 * We might change this in the future in case something needs the div grouping.
-					 */
-					.clazz(clazz));
-			scope = fragment.open();
-		}
-		public Label(String title) {
-			this(title, null);
-		}
-		@Override
-		public void close() {
-			scope.close();
-			dd.add(fragment.content());
-		}
-	}
-	public static void label(String title, String clazz, DomContent content) {
-		try (var label = new Label(title, clazz)) {
-			SiteFragment.get().add(content);
-		}
-	}
-	public static void label(String title, DomContent content) {
-		label(title, null, content);
-	}
-	/*
-	 * Sometimes we just want to display information under a label instead of offering editable control.
-	 * These controls are usually called "static" or some such in UI toolkits,
-	 * but we name them label() here as they are essentially just thin wrappers around label() above.
-	 */
-	public static void label(String title, String text) {
-		label(title, new DomText(text));
-	}
-	public static void label(String title, String format, Object... args) {
-		label(title, String.format(format, args));
-	}
-	/*
 	 * Control data is usually held in transient page-local storage, perhaps with persistence in user's preferences.
 	 * We however want to allow editing of anything, so we provide this interface for arbitrary data sources.
 	 * This should be probably moved up to pushmode or even hookless.
 	 */
-	public static interface Binding<T> {
+	public static interface DataBinding<T> {
 		T get();
 		void set(T value);
 		/*
 		 * We don't want to deal with fallbacks in every bind() method below.
 		 * Besides handling fallbacks centrally here, this method allows chaining to fallback bindings.
 		 */
-		default Binding<T> orElse(T fallback) {
-			Binding<T> outer = this;
-			return new Binding<>() {
+		default DataBinding<T> orElse(T fallback) {
+			DataBinding<T> outer = this;
+			return new DataBinding<>() {
 				@Override
 				public T get() {
 					T value = outer.get();
@@ -643,9 +54,9 @@ public class Dialog {
 	public static interface IntBinding {
 		int get();
 		void set(int value);
-		default Binding<Integer> boxed(int fallback) {
+		default DataBinding<Integer> boxed(int fallback) {
 			IntBinding outer = this;
-			return new Binding<Integer>() {
+			return new DataBinding<Integer>() {
 				@Override
 				public Integer get() {
 					return outer.get();
@@ -657,8 +68,8 @@ public class Dialog {
 			};
 		}
 	}
-	public static <T> Binding<T> bind(Supplier<T> getter, Consumer<T> setter) {
-		return new Binding<>() {
+	public static <T> DataBinding<T> bind(Supplier<T> getter, Consumer<T> setter) {
+		return new DataBinding<>() {
 			@Override
 			public T get() {
 				return getter.get();
@@ -679,7 +90,7 @@ public class Dialog {
 			}
 		};
 	}
-	public static <K, V> Binding<V> bind(Map<K, V> map, K key) {
+	public static <K, V> DataBinding<V> bind(Map<K, V> map, K key) {
 		return bind(() -> map.get(key), v -> {
 			if (v != null)
 				map.put(key, v);
@@ -687,11 +98,11 @@ public class Dialog {
 				map.remove(key);
 		});
 	}
-	public static Binding<String> bindString(ReactivePreferences preferences, String key) {
+	public static DataBinding<String> bindString(ReactivePreferences preferences, String key) {
 		return bind(() -> preferences.get(key, null), v -> preferences.put(key, v));
 	}
 	@SuppressWarnings("unchecked")
-	public static <T extends Enum<T>> Binding<T> bindEnum(ReactivePreferences preferences, String key, T fallback) {
+	public static <T extends Enum<T>> DataBinding<T> bindEnum(ReactivePreferences preferences, String key, T fallback) {
 		Class<T> clazz = (Class<T>)fallback.getClass();
 		return bind(
 			() -> Exceptions.silence().get(() -> Enum.valueOf(clazz, preferences.get(key, fallback.name()))).orElse(fallback),
@@ -710,8 +121,8 @@ public class Dialog {
 			this.title = title;
 			return this;
 		}
-		private Binding<String> binding;
-		public Dialog.Editor binding(Binding<String> binding) {
+		private DataBinding<String> binding;
+		public Dialog.Editor binding(DataBinding<String> binding) {
 			this.binding = binding;
 			return this;
 		}
@@ -723,10 +134,13 @@ public class Dialog {
 			 * Text editor API guarantees non-null return no matter what parameters are passed in.
 			 */
 			binding = binding.orElse("");
-			label(title, "text-picker", Html.input()
-				.id(SiteFragment.get().elementId(title))
-				.type("text")
-				.value(binding.get(), binding::set));
+			new ContentLabel(title)
+				.clazz("text-picker")
+				.add(Html.input()
+					.id(SiteFragment.get().elementId(title))
+					.type("text")
+					.value(binding.get(), binding::set))
+				.render();
 			return binding.get();
 		}
 	}
@@ -756,8 +170,8 @@ public class Dialog {
 		 * List picker requires binding as there is no default storage for arbitrary objects.
 		 * That's why specialized pickers need to be defined.
 		 */
-		private Binding<T> binding;
-		public Picker<T> binding(Binding<T> binding) {
+		private DataBinding<T> binding;
+		public Picker<T> binding(DataBinding<T> binding) {
 			this.binding = binding;
 			return this;
 		}
@@ -774,14 +188,17 @@ public class Dialog {
 			 * that returned object is one of the items in the list.
 			 */
 			T current = bound != null && list.contains(bound) ? bound : list.stream().findFirst().orElseThrow();
-			label(title, "list-picker", Html.ul()
-				.add(list.stream()
-					.map(v -> Html.li()
-						.clazz(Objects.equals(current, v) ? "list-picker-current" : null)
-						.add(Html.button()
-							.id(SiteFragment.get().elementId(title, naming.apply(v)))
-							.onclick(() -> binding.set(v))
-							.add(naming.apply(v))))));
+			new ContentLabel(title)
+				.clazz("list-picker")
+				.add(Html.ul()
+					.add(list.stream()
+						.map(v -> Html.li()
+							.clazz(Objects.equals(current, v) ? "list-picker-current" : null)
+							.add(Html.button()
+								.id(SiteFragment.get().elementId(title, naming.apply(v)))
+								.onclick(() -> binding.set(v))
+								.add(naming.apply(v))))))
+				.render();
 			return current;
 		}
 	}
@@ -844,15 +261,15 @@ public class Dialog {
 	 */
 	public static class CasePicker implements AutoCloseable {
 		private final String title;
-		private Binding<String> binding;
+		private DataBinding<String> binding;
 		private String selected;
 		private final List<String> cases = new ArrayList<>();
-		private final Empty empty;
+		private final EmptySlot empty;
 		private boolean taken;
 		public CasePicker(String title) {
 			this.title = title;
-			try (var label = new Label(title, "list-picker")) {
-				empty = Empty.block();
+			try (var label = new ContentLabel(title).clazz("list-picker").define()) {
+				empty = EmptySlot.block();
 			}
 		}
 		public boolean is(String label) {
@@ -887,7 +304,7 @@ public class Dialog {
 								.add(c)))));
 				if (!taken) {
 					SiteFragment.temporary()
-						.run(() -> warn("Nothing selected. Pick one option manually."))
+						.run(() -> Notice.warn("Nothing selected. Pick one option manually."))
 						.render(empty.content());
 				}
 			}
@@ -908,8 +325,8 @@ public class Dialog {
 			this.subset = subset;
 			return this;
 		}
-		private Binding<T> binding;
-		public EnumPicker<T> binding(Binding<T> binding) {
+		private DataBinding<T> binding;
+		public EnumPicker<T> binding(DataBinding<T> binding) {
 			this.binding = binding;
 			return this;
 		}

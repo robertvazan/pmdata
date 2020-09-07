@@ -1,5 +1,5 @@
 // Part of PMData: https://pmdata.machinezoo.com
-package com.machinezoo.pmdata;
+package com.machinezoo.pmdata.widgets;
 
 import java.util.*;
 import com.machinezoo.pmsite.*;
@@ -7,9 +7,9 @@ import com.machinezoo.pushmode.dom.*;
 import com.machinezoo.stagean.*;
 
 @DraftApi("drop the subtitle feature")
-public class PageHeaderWidget {
+public class PageHeader {
 	private final SitePage page;
-	public PageHeaderWidget(SitePage page) {
+	public PageHeader(SitePage page) {
 		Objects.requireNonNull(page);
 		this.page = page;
 		title = page.site().title();
@@ -21,22 +21,22 @@ public class PageHeaderWidget {
 		return page.location();
 	}
 	private String title;
-	public PageHeaderWidget title(String title) {
+	public PageHeader title(String title) {
 		this.title = title;
 		return this;
 	}
 	private String subtitle;
-	public PageHeaderWidget subtitle(String subtitle) {
+	public PageHeader subtitle(String subtitle) {
 		this.subtitle = subtitle;
 		return this;
 	}
 	private String root = "/";
-	public PageHeaderWidget root(String root) {
+	public PageHeader root(String root) {
 		this.root = root;
 		return this;
 	}
 	private String self = "Home";
-	public PageHeaderWidget self(String self) {
+	public PageHeader self(String self) {
 		this.self = self;
 		return this;
 	}
@@ -58,11 +58,11 @@ public class PageHeaderWidget {
 		}
 	}
 	private final List<MenuItem> items = new ArrayList<>();
-	public PageHeaderWidget menu(String path, String text) {
+	public PageHeader menu(String path, String text) {
 		items.add(new MenuItem(path, text, path));
 		return this;
 	}
-	public PageHeaderWidget menu(String path, String text, String pattern) {
+	public PageHeader menu(String path, String text, String pattern) {
 		items.add(new MenuItem(path, text, pattern));
 		return this;
 	}

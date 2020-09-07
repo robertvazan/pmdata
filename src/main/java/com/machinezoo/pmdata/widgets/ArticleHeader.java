@@ -1,5 +1,5 @@
 // Part of PMData: https://pmdata.machinezoo.com
-package com.machinezoo.pmdata;
+package com.machinezoo.pmdata.widgets;
 
 import static java.util.stream.Collectors.*;
 import com.machinezoo.pmsite.*;
@@ -8,7 +8,7 @@ import com.machinezoo.stagean.*;
 
 @DraftApi
 @DraftCode("structure & CSS cleanup")
-public class ArticleHeaderWidget {
+public class ArticleHeader {
 	protected String title() {
 		return SiteFragment.get().page().location().title();
 	}
