@@ -11,7 +11,6 @@ import javax.imageio.*;
 import javax.imageio.plugins.jpeg.*;
 import javax.imageio.stream.*;
 import com.machinezoo.noexception.*;
-import com.machinezoo.pmdata.Dialog;
 import com.machinezoo.pmsite.*;
 import com.machinezoo.pushmode.dom.*;
 import com.machinezoo.stagean.*;
@@ -147,7 +146,7 @@ public class ImageViewer {
 				.width(size.width)
 				.height(size.height);
 		}
-		int scale = this.scale >= 0 ? this.scale : Dialog.pickInt("Image size", new int[] { 50, 75, 100, 125, 150, 175, 200, 250, 0 }, 100, n -> n > 0 ? n + "%" : "Auto");
+		int scale = this.scale >= 0 ? this.scale : IntPicker.pickInt("Image size", new int[] { 50, 75, 100, 125, 150, 175, 200, 250, 0 }, 100, n -> n > 0 ? n + "%" : "Auto");
 		try (var figure = Figure.define(title)) {
 			SiteFragment.get()
 				.add(img
