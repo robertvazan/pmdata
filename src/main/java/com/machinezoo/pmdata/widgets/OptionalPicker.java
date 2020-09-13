@@ -74,6 +74,7 @@ public class OptionalPicker<T> {
 		if (fallback.isPresent() && !items.contains(fallback))
 			throw new IllegalStateException("Fallback value must be in the item list.");
 		Optional<T> current;
+		StringBinding sbinding;
 		if (binding != null) {
 			Optional<T> bound = binding.get().orElse(null);
 			if (bound == null)
@@ -84,9 +85,11 @@ public class OptionalPicker<T> {
 				current = bound;
 			else
 				current = fallback;
+			sbinding = null;
 		} else {
 			Objects.requireNonNull(title, "Picker must have a title or a binding.");
-			String bound = StringBinding.of(title).get().orElse(null);
+			sbinding = StringBinding.of(title);
+			String bound = sbinding.get().orElse(null);
 			if (bound == null)
 				current = fallback;
 			else if (bound.isEmpty())
@@ -105,7 +108,7 @@ public class OptionalPicker<T> {
 							if (binding != null)
 								binding.set(Optional.empty());
 							else
-								StringBinding.of(title).set("");
+								sbinding.set("");
 						})
 						.add(Svg.svg()
 							.viewBox("-10 -10 20 20")
@@ -132,7 +135,7 @@ public class OptionalPicker<T> {
 								if (binding != null)
 									binding.set(Optional.of(v));
 								else
-									StringBinding.of(title).set(naming.apply(v));
+									sbinding.set(naming.apply(v));
 							})
 							.add(naming.apply(v))))))
 			.render();

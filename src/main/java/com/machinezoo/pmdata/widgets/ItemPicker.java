@@ -87,9 +87,11 @@ public class ItemPicker<T> {
 		if (!items.contains(fallback))
 			throw new IllegalStateException("Fallback value must be in the item list.");
 		T current;
+		Consumer<T> setter;
 		if (binding != null) {
 			T bound = binding.get().orElse(null);
 			current = items.contains(bound) ? bound : fallback;
+			setter = binding::set;
 		} else {
 			/*
 			 * If no binding is provided, fall back to storing item labels. Title is required for this.
@@ -101,8 +103,10 @@ public class ItemPicker<T> {
 			 * perhaps even add new StringBinding field to this class.
 			 */
 			Objects.requireNonNull(title, "Picker must have a title or a binding.");
-			String bound = StringBinding.of(title).get().orElse(null);
+			var sbinding = StringBinding.of(title);
+			String bound = sbinding.get().orElse(null);
 			current = items.stream().filter(v -> naming.apply(v).equals(bound)).findFirst().orElse(fallback);
+			setter = v -> sbinding.set(naming.apply(v));
 		}
 		new ContentLabel(title)
 			.add(Html.ul()
@@ -112,12 +116,7 @@ public class ItemPicker<T> {
 						.clazz(Objects.equals(current, v) ? "item-picker-current" : null)
 						.add(Html.button()
 							.id(SiteFragment.get().elementId(title, naming.apply(v)))
-							.onclick(() -> {
-								if (binding != null)
-									binding.set(v);
-								else
-									StringBinding.of(title).set(naming.apply(v));
-							})
+							.onclick(() -> setter.accept(v))
 							.add(naming.apply(v))))))
 			.render();
 		return current;
