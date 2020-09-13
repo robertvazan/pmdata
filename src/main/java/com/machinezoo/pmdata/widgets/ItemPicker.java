@@ -40,14 +40,6 @@ public class ItemPicker<T> {
 	public final ItemPicker<T> add(T... items) {
 		return add(Arrays.stream(items));
 	}
-	/*
-	 * Binding is optional since we can fall back to storing labels.
-	 */
-	private DataBinding<T> binding;
-	public ItemPicker<T> binding(DataBinding<T> binding) {
-		this.binding = binding;
-		return this;
-	}
 	public ItemPicker() {
 	}
 	public ItemPicker(String title) {
@@ -65,6 +57,14 @@ public class ItemPicker<T> {
 	public ItemPicker(String title, Stream<? extends T> items) {
 		this.title = title;
 		add(items);
+	}
+	/*
+	 * Binding is optional since we can fall back to storing labels.
+	 */
+	private DataBinding<T> binding;
+	public ItemPicker<T> binding(DataBinding<T> binding) {
+		this.binding = binding;
+		return this;
 	}
 	/*
 	 * Must never return null.

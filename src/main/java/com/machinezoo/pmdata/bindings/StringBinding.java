@@ -62,6 +62,24 @@ public abstract class StringBinding implements Supplier<Optional<String>> {
 	public <T extends Enum<T>> DataBinding<T> asEnum(Class<T> clazz) {
 		return DataBinding.define(() -> get().map(v -> Enum.valueOf(clazz, v)).orElse(null), v -> set(v.name())).silence();
 	}
+	public <T extends Enum<T>> DataBinding<Optional<T>> asOptionalEnum(Class<T> clazz) {
+		return new DataBinding<Optional<T>>() {
+			@Override
+			public Optional<Optional<T>> get() {
+				var value = StringBinding.this.get().orElse(null);
+				if (value == null)
+					return Optional.empty();
+				else if (value.isEmpty())
+					return Optional.of(Optional.empty());
+				else
+					return Exceptions.silence().get(() -> Optional.of(Optional.of(Enum.valueOf(clazz, value)))).orElse(Optional.empty());
+			}
+			@Override
+			public void set(Optional<T> value) {
+				StringBinding.this.set(value == null ? null : value.isEmpty() ? "" : value.get().name());
+			}
+		};
+	}
 	public IntBinding asInt() {
 		return new IntBinding() {
 			@Override

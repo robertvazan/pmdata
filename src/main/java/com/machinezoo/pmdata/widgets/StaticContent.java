@@ -50,12 +50,13 @@ public class StaticContent {
 			.clazz(clazz)
 			.add(Html.div()
 				.clazz("static-content")
-				.add(content));
+				.add(content))
+			.render();
 	}
 	public CloseableScope define() {
 		var fragment = SiteFragment.forKey(SiteFragment.get().key());
-		return fragment.add(content).open().andThen(() -> {
-			content = fragment.content();
+		return fragment.open().andThen(() -> {
+			add(fragment.content());
 			render();
 		});
 	}

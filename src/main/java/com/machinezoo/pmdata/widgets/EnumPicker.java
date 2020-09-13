@@ -87,7 +87,7 @@ public class EnumPicker<T extends Enum<T>> {
 			throw new IllegalStateException("Enum type must be specified implicitly or explicitly.");
 		T fallback = this.fallback != null ? this.fallback : !items.isEmpty() ? items.get(0) : clazz.getEnumConstants()[0];
 		if (!items.isEmpty() && !items.contains(fallback))
-			throw new IllegalStateException("Fallback must be in the subset.");
+			throw new IllegalStateException("Fallback must be in the item list.");
 		var clazz = this.clazz != null ? this.clazz : (Class<T>)fallback.getClass();
 		var items = !this.items.isEmpty() ? this.items : Arrays.asList(clazz.getEnumConstants());
 		if (binding == null)

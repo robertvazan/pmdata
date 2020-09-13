@@ -74,8 +74,8 @@ public class ContentLabel {
 		 * We will just create new empty fragment for the same key, so that we can capture content in it.
 		 */
 		var fragment = SiteFragment.forKey(SiteFragment.get().key());
-		return fragment.add(content).open().andThen(() -> {
-			content = fragment.content();
+		return fragment.open().andThen(() -> {
+			add(fragment.content());
 			render();
 		});
 	}
