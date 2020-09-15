@@ -4,7 +4,7 @@ package com.machinezoo.pmdata.widgets;
 import static java.util.stream.Collectors.*;
 import java.util.*;
 import java.util.stream.*;
-import com.machinezoo.pmdata.*;
+import com.machinezoo.pmdata.formatters.*;
 import com.machinezoo.pmsite.*;
 import com.machinezoo.pushmode.dom.*;
 import com.machinezoo.stagean.*;
@@ -156,16 +156,9 @@ public class PlainTable implements AutoCloseable {
 	}
 	/*
 	 * Table can be also asked to display arbitrary data and decide on formatting.
-	 * We will provide overloads for primitive types and one overload that takes arbitrary object.
 	 */
-	public Cell add(String column, long number) {
-		return add(column, Pretty.number(number));
-	}
-	public Cell add(String column, double number) {
-		return add(column, Pretty.number(number));
-	}
 	public Cell add(String column, Object data) {
-		return add(column, Pretty.any(data));
+		return add(column, Pretty.object().format(data));
 	}
 	private String fallback;
 	public void fallback(String fallback) {

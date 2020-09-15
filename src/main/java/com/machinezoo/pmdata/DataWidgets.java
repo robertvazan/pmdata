@@ -9,6 +9,7 @@ import java.util.function.*;
 import com.google.common.cache.*;
 import com.machinezoo.hookless.*;
 import com.machinezoo.noexception.*;
+import com.machinezoo.pmdata.formatters.*;
 import com.machinezoo.pmdata.widgets.*;
 import com.machinezoo.pmsite.*;
 import com.machinezoo.pushmode.dom.*;
@@ -100,7 +101,7 @@ public class DataWidgets {
 		table.add("Refreshed", cache.refreshed());
 		var path = cache.path();
 		var size = path == null ? 0 : Exceptions.sneak().get(() -> Files.size(path));
-		table.add("Size", Pretty.bytes(size));
+		table.add("Size", Pretty.bytes().format(size));
 		var hash = cache.hash();
 		switch (cache.state()) {
 		case IDLE:
