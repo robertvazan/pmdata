@@ -70,7 +70,7 @@ public class DurationFormatter implements DurationValueFormatter, ReactiveDurati
 		if (value.compareTo(Duration.ofHours(1)) >= 0)
 			return String.format("%dh %dm", value.toHours(), value.toMinutes() % 60);
 		if (value.compareTo(Duration.ofMinutes(1)) >= 0)
-			return String.format("%dm %fs", value.toMinutes(), value.getSeconds() % 60);
+			return String.format("%dm %ds", value.toMinutes(), value.getSeconds() % 60);
 		if (value.compareTo(Duration.ofSeconds(10)) >= 0)
 			return String.format("%.1f s", 0.001 * value.truncatedTo(Duration.ofMillis(100)).toMillis());
 		if (value.compareTo(Duration.ofSeconds(1)) >= 0)
