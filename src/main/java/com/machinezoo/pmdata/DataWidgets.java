@@ -2,34 +2,30 @@
 package com.machinezoo.pmdata;
 
 import java.lang.reflect.*;
-import java.nio.file.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.*;
+import org.slf4j.*;
 import com.google.common.cache.*;
 import com.machinezoo.hookless.*;
 import com.machinezoo.noexception.*;
-import com.machinezoo.pmdata.formatters.*;
-import com.machinezoo.pmdata.widgets.*;
+import com.machinezoo.pmdata.caching.*;
 import com.machinezoo.pmsite.*;
 import com.machinezoo.pushmode.dom.*;
 import com.machinezoo.stagean.*;
-import one.util.streamex.*;
 
 @DraftApi
 public class DataWidgets {
-	private static class CachedContent {
-		private final SiteFragment fragment;
-		private final List<BlobCache.Dependency> dependencies;
-		CachedContent(SiteFragment fragment, List<BlobCache.Dependency> dependencies) {
-			this.fragment = fragment;
-			this.dependencies = dependencies;
-		}
+	private static class PartialContent {
+		SiteFragment fragment;
+		Throwable exception;
 	}
-	private static CachedContent evaluate(SiteFragment.Key key, Runnable runnable) {
-		var fragment = SiteFragment.forKey(key);
-		try (var scope = fragment.open()) {
-			try (var tracker = new BlobCache.Tracker()) {
+	private static final Logger logger = LoggerFactory.getLogger(DataWidgets.class);
+	private static CacheDerivative<PartialContent> evaluate(SiteFragment.Key key, Runnable runnable) {
+		return CacheDerivative.capture(() -> {
+			var partial = new PartialContent();
+			partial.fragment = SiteFragment.forKey(key);
+			try (var scope = partial.fragment.open()) {
 				try {
 					/*
 					 * This would be a great place to call SiteReload.watch().
@@ -39,118 +35,13 @@ public class DataWidgets {
 					 * to force cached dialog refresh when code changes.
 					 */
 					runnable.run();
-				} catch (BlobCache.EmptyCacheException ex) {
-					Notice.fail("Some content depends on uninitialized BLOB cache.");
 				} catch (Throwable ex) {
-					/*
-					 * We want to catch the exception here, so that cache UI is not affected by content exceptions.
-					 * UI for persistent cache, for example, must remain visible in case of exception,
-					 * because cache refresh may be needed to resolve the exception.
-					 */
-					Notice.fail("Exception was thrown while generating content.");
-					fragment.add(fragment.page().handle(ex));
+					logger.error("DataWidget threw an exception.", ex);
+					partial.exception = ex;
 				}
-				return new CachedContent(fragment, tracker.dependencies());
 			}
-		}
-	}
-	private static void sort(List<BlobCache> sorted, BlobCache next) {
-		if (!sorted.contains(next)) {
-			for (var dependency : StreamEx.of(next.dependencies()).append(next.blockers()))
-				sort(sorted, dependency.cache());
-			sorted.add(next);
-		}
-	}
-	private static void table(List<BlobCache.Dependency> dependencies) {
-		if (dependencies.isEmpty())
-			return;
-		var prefs = SiteFragment.get().preferences();
-		boolean shown = prefs.getBoolean("show-dependencies", false);
-		Notice.info(new DomFragment()
-			.add("Content above relies on BLOB cache (")
-			.add(Html.button()
-				.id(SiteFragment.get().elementId("show-dependencies"))
-				.clazz("link-button")
-				.add(shown ? "hide" : "show")
-				.onclick(() -> prefs.putBoolean("show-dependencies", !shown)))
-			.add(")."));
-		var caches = new ArrayList<BlobCache>();
-		for (var dependency : dependencies)
-			sort(caches, dependency.cache());
-		if (caches.stream().flatMap(c -> c.dependencies().stream()).anyMatch(d -> !d.fresh()))
-			Notice.warn("Some BLOB caches are stale.");
-		if (shown) {
-			try (var table = new PlainTable("Cache dependencies")) {
-				for (var cache : caches)
-					row(table, cache);
-			}
-		}
-		var exception = StreamEx.of(caches)
-			.map(c -> c.exception())
-			.filter(ex -> !(ex instanceof CancellationException) && !(ex instanceof ReactiveBlockingException))
-			.nonNull()
-			.findFirst();
-		if (exception.isPresent()) {
-			Notice.fail("At least one cache has failed to refresh.");
-			SiteFragment.get().add(SiteFragment.get().page().handle(exception.get()));
-		}
-	}
-	private static void row(PlainTable table, BlobCache cache) {
-		table.add("Cache", cache.id).left();
-		table.add("Updated", cache.updated());
-		table.add("Refreshed", cache.refreshed());
-		var path = cache.path();
-		var size = path == null ? 0 : Exceptions.sneak().get(() -> Files.size(path));
-		table.add("Size", Pretty.bytes().format(size));
-		var hash = cache.hash();
-		switch (cache.state()) {
-		case IDLE:
-			if (cache.exception() != null) {
-				if (cache.exception() instanceof CancellationException)
-					table.add("Status", Html.span().clazz("maybe").add("Cancelled"));
-				else if (cache.exception() instanceof ReactiveBlockingException)
-					table.add("Status", Html.span().clazz("no").add("Blocked"));
-				else
-					table.add("Status", Html.span().clazz("no").add("Failed"));
-			} else if (hash == null)
-				table.add("Status", Html.span().clazz("maybe").add("Empty"));
-			else {
-				if (cache.dependencies().stream().allMatch(d -> d.fresh()))
-					table.add("Status", "Ready");
-				else
-					table.add("Status", Html.span().clazz("maybe").add("Stale"));
-			}
-			break;
-		case SCHEDULED:
-			table.add("Status", "Starting...");
-			break;
-		case RUNNING:
-			var progress = cache.progress();
-			table.add("Status", progress != null ? progress : "Refreshing...");
-			break;
-		case CANCELLING:
-			table.add("Status", "Cancelling...");
-			break;
-		}
-		switch (cache.state()) {
-		case IDLE:
-			if (cache.defined())
-				table.add("Control", button(cache, hash == null ? "Populate" : "Refresh", cache::refresh));
-			break;
-		case SCHEDULED:
-		case RUNNING:
-			table.add("Control", button(cache, "Cancel", cache::cancel));
-			break;
-		default:
-			break;
-		}
-	}
-	private static DomContent button(BlobCache cache, String title, Runnable runnable) {
-		return Html.button()
-			.id(SiteFragment.get().elementId(cache.id.toString(), title))
-			.clazz("link-button")
-			.add(title)
-			.onclick(runnable);
+			return partial;
+		});
 	}
 	/*
 	 * Caching requires a repeatable key. Unfortunately, this cache depends on Runnable.
@@ -161,7 +52,7 @@ public class DataWidgets {
 	 * We will use two cache layers, one for the content itself and one for everything including cache table.
 	 * This arrangement will avoid content refresh when we just want to update cache refresh progress.
 	 */
-	private static final Cache<SiteFragment.Key, ReactiveLazy<CachedContent>> innerCache = CacheBuilder.newBuilder()
+	private static final Cache<SiteFragment.Key, ReactiveLazy<CacheDerivative<PartialContent>>> innerCache = CacheBuilder.newBuilder()
 		/*
 		 * Ideally, we would like to keep entries referenced by outer cache,
 		 * but since that's not possible, we will just duplicate outer cache configuration.
@@ -173,9 +64,13 @@ public class DataWidgets {
 	private static SiteFragment assemble(SiteFragment.Key key, Runnable runnable) {
 		var fragment = SiteFragment.forKey(key);
 		try (var scope = fragment.open()) {
-			CachedContent inner = Exceptions.sneak().get(() -> innerCache.get(key, () -> new ReactiveLazy<>(() -> evaluate(key, runnable)))).get();
-			inner.fragment.render();
-			table(inner.dependencies);
+			var derivative = Exceptions.sneak().get(() -> innerCache.get(key, () -> new ReactiveLazy<>(() -> evaluate(key, runnable)))).get();
+			var partial = derivative.value().get();
+			partial.fragment.render();
+			new CacheReport()
+				.input(derivative.input())
+				.exception(partial.exception)
+				.show();
 		}
 		return fragment;
 	}

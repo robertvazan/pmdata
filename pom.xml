@@ -62,12 +62,7 @@
 			<!-- Used to serialize cache content output. -->
 			<groupId>com.esotericsoftware</groupId>
 			<artifactId>kryo</artifactId>
-			<version>4.0.2</version>
-		</dependency>
-		<dependency>
-			<groupId>net.sf.supercsv</groupId>
-			<artifactId>super-csv-java8</artifactId>
-			<version>2.4.0</version>
+			<version>5.0.0-RC9</version>
 		</dependency>
 		<dependency>
 			<!-- Used to serialize cache content and to store local preferences. -->

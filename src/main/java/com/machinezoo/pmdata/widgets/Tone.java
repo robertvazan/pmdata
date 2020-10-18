@@ -19,7 +19,8 @@ public enum Tone {
 	INFO("yes"),
 	NOTICE("yes"),
 	ERROR("no"),
-	WARNING("maybe");
+	WARNING("maybe"),
+	PROGRESS("progress");
 	private final String css;
 	public String css() {
 		return css;

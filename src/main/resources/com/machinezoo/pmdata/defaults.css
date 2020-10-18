@@ -245,6 +245,9 @@ main > article td.align-right, main > article th.align-right {
 .maybe {
 	color: #f70;
 }
+.progress {
+	color: #00f;
+}
 main > article td.yes {
 	color: #060;
 	background: #dfd;
@@ -257,11 +260,16 @@ main > article td.maybe {
 	color: #a40;
 	background: #fff8bb;
 }
-main > article td.yes, main > article td.no, main > article td.maybe {
+main > article td.progress {
+	color: #00a;
+	background: #cef;
+}
+main > article td.yes, main > article td.no, main > article td.maybe, main > article td.progress {
 	border-top: 1px solid #ccc;
 	border-bottom: 1px solid #ccc;
 }
-main > article tr:nth-last-child(1) > td.yes, main > article tr:nth-last-child(1) > td.no, main > article tr:nth-last-child(1) > td.maybe {
+main > article tr:nth-last-child(1) > td.yes, main > article tr:nth-last-child(1) > td.no,
+main > article tr:nth-last-child(1) > td.maybe, main > article tr:nth-last-child(1) > td.progress {
 	border-bottom: none;
 }
 .link-button {
@@ -290,6 +298,7 @@ main > article tr:nth-last-child(1) > td.yes, main > article tr:nth-last-child(1
 	border: 1px solid #36c;
 	border-left-width: 10px;
 	margin: 20px auto;
+	overflow-wrap: anywhere;
 }
 .notice.maybe {
 	border-color: #ff9000;

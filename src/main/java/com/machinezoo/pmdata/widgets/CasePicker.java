@@ -71,8 +71,8 @@ public class CasePicker implements AutoCloseable {
 		if (cases.contains(label))
 			throw new IllegalArgumentException("Duplicate case label.");
 		if (binding == null) {
-			binding = StringBinding.of(title).orElse(label);
-			selected = binding.get().orElse(null);
+			binding = StringBinding.of(title);
+			selected = binding.get().orElse(label);
 		}
 		cases.add(label);
 		taken |= label.equals(selected);

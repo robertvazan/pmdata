@@ -17,7 +17,7 @@ public class DurationFormatter implements DurationValueFormatter, ReactiveDurati
 		if (value.toHours() > 0)
 			return String.format("%dh %dm", value.toHours(), value.toMinutesPart());
 		if (value.toMinutes() > 0)
-			return String.format("%dm %fs", value.toMinutes(), value.toSecondsPart());
+			return String.format("%dm %ds", value.toMinutes(), value.toSecondsPart());
 		if (value.toSeconds() >= 10)
 			return String.format("%.1f s", value.toSeconds() + 0.000_000_001 * value.toNanosPart());
 		if (value.toSeconds() >= 1)

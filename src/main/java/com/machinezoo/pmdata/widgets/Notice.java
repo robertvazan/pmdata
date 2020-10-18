@@ -10,6 +10,11 @@ import com.machinezoo.stagean.*;
  */
 @DraftApi
 public class Notice {
+	private String key;
+	public Notice key(String key) {
+		this.key = key;
+		return this;
+	}
 	private Tone tone = Tone.INFO;
 	public Notice tone(Tone tone) {
 		this.tone = tone;
@@ -29,6 +34,7 @@ public class Notice {
 	public void render() {
 		SiteFragment.get()
 			.add(Html.aside()
+				.key(key)
 				.clazz("notice", tone.css())
 				.add(content));
 	}
