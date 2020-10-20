@@ -10,7 +10,7 @@ import com.machinezoo.noexception.*;
 import com.machinezoo.pmsite.utils.*;
 
 public class CacheOutput {
-	private static final Logger logger = LoggerFactory.getLogger(PersistentCache.class);
+	private static final Logger logger = LoggerFactory.getLogger(CacheState.class);
 	public static final Path DEFAULT = SiteFiles.cacheOf(CacheOutput.class.getSimpleName());
 	private static void clear(Path directory) {
 		try {

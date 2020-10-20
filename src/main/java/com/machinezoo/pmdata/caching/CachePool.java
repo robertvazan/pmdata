@@ -50,10 +50,10 @@ public class CachePool {
 	public static <T> T derive(DerivativeCacheQuery<T> query) {
 		return compute(new DerivingQuery<T>(query)).get().unpack();
 	}
-	private static final ConcurrentMap<PersistentCacheQuery<?>, PersistentCache<?>> persistent = new ConcurrentHashMap<>();
+	private static final ConcurrentMap<PersistentCacheQuery<?>, CacheState<?>> persistent = new ConcurrentHashMap<>();
 	@SuppressWarnings("unchecked")
-	static <T extends CacheData> PersistentCache<T> persist(PersistentCacheQuery<T> query) {
-		return (PersistentCache<T>)persistent.computeIfAbsent(query, key -> new PersistentCache<>(query.format())
+	static <T extends CacheData> CacheState<T> persist(PersistentCacheQuery<T> query) {
+		return (CacheState<T>)persistent.computeIfAbsent(query, key -> new CacheState<>(query.format())
 			.id(query)
 			.policy(query.policy())
 			.link(query::link)

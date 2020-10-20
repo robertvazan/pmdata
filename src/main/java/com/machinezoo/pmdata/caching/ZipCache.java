@@ -24,7 +24,7 @@ public class ZipCache {
 	public static ZipCache of(BinaryFile file) {
 		return new ZipCache(() -> file.path());
 	}
-	public static ZipCache of(PersistentCache<BinaryFile> cache) {
+	public static ZipCache of(CacheState<BinaryFile> cache) {
 		return new ZipCache(() -> cache.get().path());
 	}
 	public ZipFile zip() {

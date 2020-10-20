@@ -55,7 +55,7 @@ public class CacheReport {
 		}
 	}
 	private static class CacheInfo {
-		PersistentCache<?> cache;
+		CacheState<?> cache;
 		/*
 		 * Stringified cache ID.
 		 */

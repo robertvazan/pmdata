@@ -22,10 +22,10 @@ import com.machinezoo.pmsite.utils.*;
 import com.machinezoo.stagean.*;
 
 @DraftApi("update() in addition to supply() that takes old CacheData as its parameter (may return the same)")
-public class PersistentCache<T extends CacheData> {
-	private static final Logger logger = LoggerFactory.getLogger(PersistentCache.class);
+public class CacheState<T extends CacheData> {
+	private static final Logger logger = LoggerFactory.getLogger(CacheState.class);
 	private final CacheFormat<T> format;
-	public PersistentCache(CacheFormat<T> format) {
+	public CacheState(CacheFormat<T> format) {
 		this.format = format;
 	}
 	/*
@@ -49,7 +49,7 @@ public class PersistentCache<T extends CacheData> {
 	public Object id() {
 		return id;
 	}
-	public synchronized PersistentCache<T> id(Object id) {
+	public synchronized CacheState<T> id(Object id) {
 		Objects.requireNonNull(id);
 		configure();
 		this.id = id;
@@ -59,7 +59,7 @@ public class PersistentCache<T extends CacheData> {
 	public synchronized CachePolicy policy() {
 		return policy.clone();
 	}
-	public synchronized PersistentCache<T> policy(CachePolicy policy) {
+	public synchronized CacheState<T> policy(CachePolicy policy) {
 		Objects.requireNonNull(policy);
 		if (policy.period() != null && policy.mode() != CacheRefreshMode.AUTOMATIC)
 			throw new IllegalArgumentException("Period makes sense only with automatic refresh.");
@@ -69,14 +69,14 @@ public class PersistentCache<T extends CacheData> {
 	}
 	private Runnable linker = () -> {
 	};
-	public synchronized PersistentCache<T> link(Runnable linker) {
+	public synchronized CacheState<T> link(Runnable linker) {
 		Objects.requireNonNull(linker);
 		configure();
 		this.linker = linker;
 		return this;
 	}
 	private Supplier<T> supplier;
-	public synchronized PersistentCache<T> supply(Supplier<T> supplier) {
+	public synchronized CacheState<T> supply(Supplier<T> supplier) {
 		Objects.requireNonNull(supplier);
 		configure();
 		this.supplier = supplier;
@@ -90,7 +90,7 @@ public class PersistentCache<T extends CacheData> {
 		return base64(Hashing.sha256().hashString(text, StandardCharsets.UTF_8).asBytes());
 	}
 	private Path directory() {
-		var path = SiteFiles.cacheOf(PersistentCache.class.getSimpleName());
+		var path = SiteFiles.cacheOf(CacheState.class.getSimpleName());
 		var name = id.toString();
 		var matcher = filenameRe.matcher(name);
 		if (matcher.find())
@@ -193,7 +193,7 @@ public class PersistentCache<T extends CacheData> {
 	 * This is called automatically when the cache is first used.
 	 * It can be called explicitly if the app wishes to check cache definitions early.
 	 */
-	public synchronized PersistentCache<T> define() {
+	public synchronized CacheState<T> define() {
 		if (!defined) {
 			Objects.requireNonNull(id, "Cache ID must be configured.");
 			Objects.requireNonNull(supplier, "Supplier must be configured.");
@@ -371,7 +371,7 @@ public class PersistentCache<T extends CacheData> {
 	 * Maybe we should in the future expose special heavy thread pool for cache parallelization.
 	 */
 	private static final ExecutorService executor = new SiteThread()
-		.owner(PersistentCache.class)
+		.owner(CacheState.class)
 		.hardwareParallelism()
 		.lowestPriority()
 		.executor();
@@ -552,6 +552,6 @@ public class PersistentCache<T extends CacheData> {
 	}
 	@Override
 	public synchronized String toString() {
-		return Optional.ofNullable(id()).orElse(PersistentCache.class.getSimpleName()).toString();
+		return Optional.ofNullable(id()).orElse(CacheState.class.getSimpleName()).toString();
 	}
 }

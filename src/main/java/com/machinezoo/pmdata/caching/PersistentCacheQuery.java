@@ -8,7 +8,7 @@ public interface PersistentCacheQuery<T extends CacheData> {
 	default CachePolicy policy() {
 		return new CachePolicy();
 	}
-	default PersistentCache<T> cache() {
+	default CacheState<T> cache() {
 		return CachePool.persist(this);
 	}
 	default void touch() {
