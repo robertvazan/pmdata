@@ -51,7 +51,7 @@
 		<dependency>
 			<groupId>com.machinezoo.pmsite</groupId>
 			<artifactId>pmsite</artifactId>
-			<version>0.15.0</version>
+			<version>0.15.1</version>
 		</dependency>
 		<dependency>
 			<groupId>one.util</groupId>
