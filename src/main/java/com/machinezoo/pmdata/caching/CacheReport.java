@@ -301,7 +301,7 @@ public class CacheReport {
 					}
 				}
 				var error = exception != null && !empty
-					? new PersistedException(exception).getFormattedCause()
+					? new CachedException(exception).getFormattedCause()
 					: caches.sorted.stream()
 						.filter(e -> e.snapshot != null)
 						.map(e -> e.snapshot.exception())

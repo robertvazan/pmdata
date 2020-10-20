@@ -6,7 +6,7 @@ import java.util.*;
 import org.mapdb.*;
 import com.machinezoo.noexception.*;
 
-public class MapDbFile implements CacheData {
+public class MapDbFile implements CacheFile {
 	private final Path path;
 	@Override
 	public Path path() {

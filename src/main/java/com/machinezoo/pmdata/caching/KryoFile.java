@@ -5,7 +5,7 @@ import java.nio.file.*;
 import java.util.concurrent.*;
 import com.esotericsoftware.kryo.io.*;
 
-public class KryoFile<T> implements CacheData {
+public class KryoFile<T> implements CacheFile {
 	private final BinaryFile binary;
 	private KryoFile(BinaryFile binary) {
 		this.binary = binary;
@@ -49,7 +49,7 @@ public class KryoFile<T> implements CacheData {
 		var input = new Input(bytes);
 		return (T)ThreadLocalKryo.get().readClassAndObject(input);
 	}
-	private static class ParsedContent<T> implements ComputeCacheQuery<T> {
+	private static class ParsedContent<T> implements ComputeCache<T> {
 		final KryoFile<T> file;
 		ParsedContent(KryoFile<T> file) {
 			this.file = file;

@@ -54,7 +54,7 @@ public class CacheInput {
 		if (frozen)
 			throw new IllegalStateException("Cache input cannot be modified anymore.");
 	}
-	public synchronized <T extends CacheData> void snapshot(CacheState<T> cache, CacheSnapshot<T> snapshot) {
+	public synchronized <T extends CacheFile> void snapshot(CacheState<T> cache, CacheSnapshot<T> snapshot) {
 		if (!snapshots.containsKey(cache)) {
 			modify();
 			snapshots.put(cache, snapshot);
@@ -64,7 +64,7 @@ public class CacheInput {
 		}
 	}
 	@SuppressWarnings("unchecked")
-	public synchronized <T extends CacheData> CacheSnapshot<T> snapshot(CacheState<T> cache) {
+	public synchronized <T extends CacheFile> CacheSnapshot<T> snapshot(CacheState<T> cache) {
 		var snapshot = snapshots.get(cache);
 		if (snapshot == null) {
 			/*
@@ -128,7 +128,7 @@ public class CacheInput {
 	public synchronized void unpack() {
 		var into = get();
 		for (var entry : snapshots.entrySet())
-			into.snapshot((CacheState<CacheData>)entry.getKey(), (CacheSnapshot<CacheData>)entry.getValue());
+			into.snapshot((CacheState<CacheFile>)entry.getKey(), (CacheSnapshot<CacheFile>)entry.getValue());
 		for (var entry : parameters.entrySet())
 			into.parameter(entry.getKey(), entry.getValue());
 		if (inconsistent)

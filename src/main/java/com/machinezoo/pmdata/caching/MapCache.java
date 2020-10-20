@@ -4,7 +4,7 @@ package com.machinezoo.pmdata.caching;
 import java.util.*;
 import java.util.function.*;
 
-public interface MapCacheQuery<K, V> extends PersistentCacheQuery<MapFile<K, V>>, Supplier<Map<K, V>> {
+public interface MapCache<K, V> extends PersistentCache<MapFile<K, V>>, Supplier<Map<K, V>> {
 	MapFile<K, V> compute();
 	@Override
 	default CacheFormat<MapFile<K, V>> format() {

@@ -3,6 +3,6 @@ package com.machinezoo.pmdata.caching;
 
 import java.nio.file.*;
 
-public interface CacheFormat<T extends CacheData> {
+public interface CacheFormat<T extends CacheFile> {
 	T load(Path path);
 }

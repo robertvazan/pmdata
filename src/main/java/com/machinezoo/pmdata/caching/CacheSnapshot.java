@@ -5,12 +5,12 @@ import java.nio.file.*;
 import java.time.*;
 import java.util.concurrent.*;
 
-public class CacheSnapshot<T extends CacheData> {
+public class CacheSnapshot<T extends CacheFile> {
 	T data;
 	public T get() {
 		if (data == null) {
 			if (exception != null)
-				throw new PersistedException(exception);
+				throw new CachedException(exception);
 			if (cancelled)
 				throw new CancellationException();
 		}

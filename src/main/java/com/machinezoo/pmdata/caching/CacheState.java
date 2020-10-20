@@ -22,7 +22,7 @@ import com.machinezoo.pmsite.utils.*;
 import com.machinezoo.stagean.*;
 
 @DraftApi("update() in addition to supply() that takes old CacheData as its parameter (may return the same)")
-public class CacheState<T extends CacheData> {
+public class CacheState<T extends CacheFile> {
 	private static final Logger logger = LoggerFactory.getLogger(CacheState.class);
 	private final CacheFormat<T> format;
 	public CacheState(CacheFormat<T> format) {
@@ -295,7 +295,7 @@ public class CacheState<T extends CacheData> {
 				return next;
 			} catch (Throwable ex) {
 				var next = new CacheSnapshot<T>();
-				next.exception = new PersistedException(ex).getFormattedCause();
+				next.exception = new CachedException(ex).getFormattedCause();
 				next.refreshed = Instant.now();
 				if (previous != null) {
 					next.data = previous.data;
@@ -503,7 +503,7 @@ public class CacheState<T extends CacheData> {
 							if (progress.get() == goal) {
 								var next = new CacheSnapshot<T>();
 								if (!cancelled)
-									next.exception = new PersistedException(ex).getFormattedCause();
+									next.exception = new CachedException(ex).getFormattedCause();
 								else if (previous != null)
 									next.exception = previous.exception;
 								next.cancelled = cancelled;

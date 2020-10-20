@@ -3,7 +3,7 @@ package com.machinezoo.pmdata.caching;
 
 import java.nio.file.*;
 
-public interface CacheData {
+public interface CacheFile {
 	Path path();
 	void commit();
 	boolean readonly();

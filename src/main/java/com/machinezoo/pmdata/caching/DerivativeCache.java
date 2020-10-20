@@ -3,10 +3,11 @@ package com.machinezoo.pmdata.caching;
 
 import java.util.function.*;
 
-public interface LazyCacheQuery<T> extends Supplier<T> {
+public interface DerivativeCache<T> extends Supplier<T> {
+	void touch();
 	T compute();
 	@Override
 	default T get() {
-		return CachePool.lazy(this);
+		return DerivativeCaches.query(this);
 	}
 }

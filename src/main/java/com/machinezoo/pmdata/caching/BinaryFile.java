@@ -8,7 +8,7 @@ import java.nio.charset.*;
 import java.nio.file.*;
 import com.machinezoo.noexception.*;
 
-public class BinaryFile implements CacheData {
+public class BinaryFile implements CacheFile {
 	private final Path path;
 	@Override
 	public Path path() {

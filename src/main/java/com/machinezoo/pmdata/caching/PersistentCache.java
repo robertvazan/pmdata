@@ -1,7 +1,7 @@
 // Part of PMData: https://pmdata.machinezoo.com
 package com.machinezoo.pmdata.caching;
 
-public interface PersistentCacheQuery<T extends CacheData> {
+public interface PersistentCache<T extends CacheFile> {
 	CacheFormat<T> format();
 	void link();
 	T supply();
@@ -9,7 +9,7 @@ public interface PersistentCacheQuery<T extends CacheData> {
 		return new CachePolicy();
 	}
 	default CacheState<T> cache() {
-		return CachePool.persist(this);
+		return PersistentCaches.query(this);
 	}
 	default void touch() {
 		cache().touch();

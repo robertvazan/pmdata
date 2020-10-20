@@ -8,7 +8,7 @@ import java.util.function.*;
 import org.mapdb.*;
 import com.machinezoo.noexception.*;
 
-public class MapFile<K, V> implements CacheData {
+public class MapFile<K, V> implements CacheFile {
 	private final MapDbFile file;
 	private final Class<K> keyType;
 	private final Class<V> valueType;
@@ -97,7 +97,7 @@ public class MapFile<K, V> implements CacheData {
 			file.commit();
 		}
 	}
-	private static class ParsedEntry<V> implements ComputeCacheQuery<V> {
+	private static class ParsedEntry<V> implements ComputeCache<V> {
 		final MapFile<?, V> file;
 		final Object key;
 		ParsedEntry(MapFile<?, V> file, Object key) {

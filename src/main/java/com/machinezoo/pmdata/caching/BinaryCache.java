@@ -4,7 +4,7 @@ package com.machinezoo.pmdata.caching;
 import java.io.*;
 import java.nio.*;
 
-public interface BinaryCacheQuery extends PersistentCacheQuery<BinaryFile> {
+public interface BinaryCache extends PersistentCache<BinaryFile> {
 	@Override
 	default CacheFormat<BinaryFile> format() {
 		return BinaryFile.format();
