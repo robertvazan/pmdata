@@ -326,8 +326,6 @@ public class CacheState<T extends CacheFile> {
 	public T get() {
 		var snapshot = CacheInput.get().snapshot(this);
 		if (snapshot == null) {
-			if (policy.mode() != CacheRefreshMode.MANUAL)
-				refresh();
 			if (policy.blocking())
 				CurrentReactiveScope.block();
 			throw new EmptyCacheException();

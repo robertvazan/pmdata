@@ -53,6 +53,10 @@ public class CacheReport {
 			this.label = label;
 			this.message = message;
 		}
+		@Override
+		public String toString() {
+			return label;
+		}
 	}
 	private static class CacheInfo {
 		CacheState<?> cache;
@@ -67,11 +71,9 @@ public class CacheReport {
 		 */
 		int depth;
 		CacheStatus status;
-		/*
-		 * Max of snapshot refresh timestamp of this cache and all dependencies recursively.
-		 * Null if this cache or any dependency isn't ready.
-		 */
-		Instant refreshedMax;
+		Instant dependencyActivity;
+		Instant latestActivity;
+		boolean dependenciesReady;
 		Progress.Goal progress;
 	}
 	private static class CacheCollection {
@@ -158,14 +160,12 @@ public class CacheReport {
 				entry.status = CacheStatus.READY;
 			if (entry.status.ordinal() > status.ordinal())
 				status = entry.status;
-			var unstableDeps = entry.children.stream().anyMatch(e -> e.refreshedMax == null);
-			var dependencyTime = entry.children.stream().map(e -> e.refreshedMax).filter(t -> t != null).max(Comparator.naturalOrder()).orElse(null);
-			if (entry.status == CacheStatus.READY) {
-				if (entry.children.isEmpty())
-					entry.refreshedMax = entry.snapshot.refreshed;
-				else if (!unstableDeps)
-					entry.refreshedMax = Stream.of(entry.snapshot.refreshed, dependencyTime).max(Comparator.naturalOrder()).get();
-			}
+			entry.dependenciesReady = entry.children.stream().allMatch(e -> e.status == CacheStatus.READY && e.dependenciesReady);
+			entry.dependencyActivity = entry.children.stream().map(e -> e.latestActivity).filter(t -> t != null).max(Comparator.naturalOrder()).orElse(null);
+			if (entry.snapshot == null)
+				entry.latestActivity = entry.dependencyActivity;
+			else
+				entry.latestActivity = Stream.of(entry.dependencyActivity, entry.snapshot.refreshed()).filter(t -> t != null).max(Comparator.naturalOrder()).orElse(null);
 			boolean refresh = false;
 			if (entry.status == CacheStatus.EMPTY && entry.cache.policy().mode() != CacheRefreshMode.MANUAL)
 				refresh = true;
@@ -173,13 +173,13 @@ public class CacheReport {
 				refresh = true;
 			if (entry.status == CacheStatus.EXPIRED)
 				refresh = true;
-			if (unstableDeps)
+			if (!entry.dependenciesReady)
 				refresh = false;
 			/*
 			 * Avoid repeated refresh. This essentially protects against repeated refresh if there's inconsistency between linker and supplier.
 			 */
-			if (entry.status == CacheStatus.STALE && !entry.children.isEmpty() && !unstableDeps
-				&& dependencyTime.isBefore(entry.snapshot.refreshed().minus(entry.snapshot.cost()))) {
+			if (entry.status == CacheStatus.STALE && entry.dependencyActivity != null
+				&& entry.dependencyActivity.isBefore(entry.snapshot.refreshed().minus(entry.snapshot.cost()))) {
 				refresh = false;
 			}
 			if (concurrency <= 0)
@@ -217,98 +217,193 @@ public class CacheReport {
 						.html()))
 				.render();
 			if (expanded) {
-				for (var entry : StreamEx.of(caches.sorted).filter(e -> e.status == CacheStatus.RUNNING)) {
-					/*
-					 * Wake up every second to refresh the progress.
-					 */
-					ReactiveInstant.now().plus(Duration.of(ConsistentRandom.of(fragment.elementId()).nextInt(1000), ChronoUnit.MILLIS)).truncatedTo(ChronoUnit.SECONDS);
-					/*
-					 * Give every Cancel button unique ID. Create one extra "progress" subfragment to differentiate it from Cancel buttons in the table.
-					 */
-					fragment.nest("progress", entry.name)
-						.run(() -> new Notice()
+				try (var view = new CasePicker("Cache view")) {
+					if (view.is("Summary")) {
+						try (var table = new PlainTable("Cache summary")) {
+							var groups = StreamEx.of(caches.sorted).groupingBy(c -> c.status);
+							for (var key : StreamEx.of(groups.keySet()).sorted()) {
+								table.add("Status", key).tone(key.tone);
+								var group = groups.get(key);
+								boolean cancellable = key == CacheStatus.QUEUED || key == CacheStatus.RUNNING;
+								var action = cancellable ? "Cancel" : status == CacheStatus.EMPTY ? "Populate" : "Refresh";
+								table.add("Action", fragment.nest("summary", key.toString())
+									.run(() -> new LinkButton(action)
+										.handle(() -> group.stream().map(g -> g.cache).forEach(cancellable ? CacheState::cancel : CacheState::refresh))
+										.render())
+									.content());
+								table.add("Count", group.size());
+								var snapshots = StreamEx.of(group).filter(g -> g.snapshot != null).map(g -> g.snapshot).toList();
+								table.add("Size", Pretty.bytes().format(snapshots.stream().mapToLong(s -> s.size()).sum()));
+								table.add("Cost", snapshots.stream().map(s -> s.cost()).reduce((a, b) -> a.plus(b)));
+								table.add("Updated", snapshots.stream().map(s -> s.updated()).max(Comparator.naturalOrder()));
+								table.add("Refreshed", snapshots.stream().map(s -> s.refreshed()).max(Comparator.naturalOrder()));
+							}
+						}
+					}
+					if (view.is("Progress")) {
+						var running = StreamEx.of(caches.sorted).filter(e -> e.status == CacheStatus.RUNNING).toList();
+						if (running.isEmpty())
+							Notice.info("No refresh in progress.");
+						for (var entry : running) {
 							/*
-							 * Optimization. Avoid large HTML diffs when progress boxes appear/disappear.
+							 * Wake up every second to refresh the progress.
 							 */
-							.key(SiteFragment.get().elementId())
-							.tone(Tone.PROGRESS)
-							.content(new DomFragment()
-								.add(String.format("Refreshing %s... ", entry.name))
-								.add(new LinkButton("Cancel")
-									.handle(entry.cache::cancel)
-									.html())
-								.add(Html.br())
-								.add(entry.progress.format()))
-							.render())
-						.render();
-				}
-				var queued = caches.sorted.stream().filter(e -> e.status == CacheStatus.QUEUED).count();
-				if (queued > 0) {
-					new Notice()
-						.key(fragment.elementId("queued"))
-						.tone(Tone.PROGRESS)
-						.format("Refresh queue contains %d cache(s).", queued)
-						.render();
-				}
-				var detailsPref = prefs.get("show-details", null);
-				var details = caches.sorted.stream().filter(c -> c.name.equals(detailsPref)).findFirst().orElse(null);
-				try (var table = new PlainTable("Caches")) {
-					for (var entry : caches.sorted) {
-						table.add("Status", entry.status.label).tone(entry.status.tone);
-						boolean cancellable = entry.status == CacheStatus.QUEUED || entry.status == CacheStatus.RUNNING;
-						var action = cancellable ? "Cancel" : status == CacheStatus.EMPTY ? "Populate" : "Refresh";
-						table.add("Action", fragment.nest(entry.name)
-							.run(() -> new LinkButton(action)
-								.handle(cancellable ? entry.cache::cancel : entry.cache::refresh)
-								.render())
-							.content());
-						if (entry.snapshot != null) {
-							table.add("Size", Pretty.bytes().format(entry.snapshot.size()));
-							table.add("Cost", entry.snapshot.cost);
-							table.add("Updated", entry.snapshot.updated());
-							table.add("Refreshed", entry.snapshot.refreshed());
-						} else {
-							table.add("Size", "");
-							table.add("Cost", "");
-							table.add("Updated", "");
-							table.add("Refreshed", "");
+							ReactiveInstant.now().plus(Duration.of(ConsistentRandom.of(fragment.elementId()).nextInt(1000), ChronoUnit.MILLIS)).truncatedTo(ChronoUnit.SECONDS);
+							/*
+							 * Give every Cancel button unique ID. Create one extra "progress" subfragment to differentiate it from Cancel buttons in the table.
+							 */
+							fragment.nest("progress", entry.name)
+								.run(() -> new Notice()
+									/*
+									 * Optimization. Avoid large HTML diffs when progress boxes appear/disappear.
+									 */
+									.key(SiteFragment.get().elementId())
+									.tone(Tone.PROGRESS)
+									.content(new DomFragment()
+										.add(String.format("Refreshing %s... ", entry.name))
+										.add(new LinkButton("Cancel")
+											.handle(entry.cache::cancel)
+											.html())
+										.add(Html.br())
+										.add(entry.progress.format()))
+									.render())
+								.render();
 						}
-						table.add("Details", fragment.nest(entry.name)
-							.run(() -> new LinkButton(details == entry ? "Hide" : "Show")
-								.handle(() -> prefs.put("show-details", details == entry ? null : entry.name))
-								.render())
-							.content());
-						table.add("Cache", entry.name).left();
+						var queued = caches.sorted.stream().filter(e -> e.status == CacheStatus.QUEUED).count();
+						if (queued > 0) {
+							new Notice()
+								.key(fragment.elementId("queued"))
+								.tone(Tone.PROGRESS)
+								.format("Refresh queue contains %d cache(s).", queued)
+								.render();
+						}
 					}
-				}
-				if (details != null) {
-					var parameters = details.cache.input().parameters();
-					if (!parameters.isEmpty()) {
-						try (var table = new PlainTable("Parameters")) {
-							for (var name : StreamEx.of(parameters.keySet()).sorted()) {
-								table.add("Name", name).left();
-								table.add("Value", parameters.get(name)).left();
+					if (view.is("Caches")) {
+						try (var table = new PlainTable("Caches")) {
+							for (var entry : caches.sorted) {
+								table.add("Status", entry.status).tone(entry.status.tone);
+								boolean cancellable = entry.status == CacheStatus.QUEUED || entry.status == CacheStatus.RUNNING;
+								var action = cancellable ? "Cancel" : status == CacheStatus.EMPTY ? "Populate" : "Refresh";
+								table.add("Action", fragment.nest("list", entry.name)
+									.run(() -> new LinkButton(action)
+										.handle(cancellable ? entry.cache::cancel : entry.cache::refresh)
+										.render())
+									.content());
+								if (entry.snapshot != null) {
+									table.add("Size", Pretty.bytes().format(entry.snapshot.size()));
+									table.add("Cost", entry.snapshot.cost);
+									table.add("Updated", entry.snapshot.updated());
+									table.add("Refreshed", entry.snapshot.refreshed());
+								} else {
+									table.add("Size", "");
+									table.add("Cost", "");
+									table.add("Updated", "");
+									table.add("Refreshed", "");
+								}
+								table.add("Cache", entry.name).left();
 							}
 						}
 					}
-					if (!details.children.isEmpty()) {
-						try (var table = new PlainTable("Dependencies")) {
-							for (var child : details.children) {
-								table.add("Status", child.status.label).tone(child.status.tone);
-								table.add("Cache", child.name).left();
+					if (view.is("Details")) {
+						var detailsPref = prefs.get("show-details", null);
+						var details = caches.sorted.stream().filter(c -> c.name.equals(detailsPref)).findFirst().orElse(null);
+						try (var dview = new CasePicker("Cache details")) {
+							if (dview.is("Pick")) {
+								try (var table = new PlainTable("Caches")) {
+									for (var entry : caches.sorted) {
+										table.add("Status", entry.status).tone(entry.status.tone);
+										if (entry != details) {
+											table.add("Details", fragment.nest("details", entry.name)
+												.run(() -> new LinkButton("Pick")
+													.handle(() -> prefs.put("show-details", entry.name))
+													.render())
+												.content());
+										} else
+											table.add("Details", "Selected");
+										table.add("Cache", entry.name).left();
+									}
+								}
+							}
+							if (details != null) {
+								StaticContent.show("Selected cache", details.name);
+								if (dview.is("Cache")) {
+									new StaticContent("Status")
+										.add(details.status.toString())
+										.tone(details.status.tone)
+										.render();
+									StaticContent.show("Length of the longest dependent chain", details.depth);
+									StaticContent.show("Input hash", details.cache.input().hash());
+									if (details.dependencyActivity != null)
+										StaticContent.show("Latest dependency activity", details.dependencyActivity);
+									if (details.latestActivity != null)
+										StaticContent.show("Latest recursive activity", details.latestActivity);
+									var started = details.cache.started();
+									if (started != null)
+										StaticContent.show("Refresh started", started);
+									if (details.progress != null)
+										StaticContent.show("Progress", details.progress);
+								}
+								if (dview.is("Contents")) {
+									if (details.snapshot != null) {
+										var snapshot = details.snapshot;
+										StaticContent.show("Input hash", snapshot.input());
+										StaticContent.show("Path", snapshot.path());
+										StaticContent.show("Content hash", snapshot.hash());
+										StaticContent.show("Size", new ByteFormatter().format(snapshot.size()));
+										StaticContent.show("Cost", snapshot.cost());
+										StaticContent.show("Updated", snapshot.updated());
+										StaticContent.show("Refreshed", snapshot.refreshed());
+										StaticContent.show("Failed", snapshot.exception() != null ? "Yes" : "No");
+										StaticContent.show("Cancelled", snapshot.cancelled() ? "Yes" : "No");
+									} else
+										Notice.info("Cache is empty.");
+								}
+								if (dview.is("Parameters")) {
+									var parameters = details.cache.input().parameters();
+									if (!parameters.isEmpty()) {
+										try (var table = new PlainTable("Parameters")) {
+											for (var name : StreamEx.of(parameters.keySet()).sorted()) {
+												table.add("Name", name).left();
+												table.add("Value", parameters.get(name)).left();
+											}
+										}
+									} else
+										Notice.info("Cache has no parameters.");
+								}
+								if (dview.is("Dependencies")) {
+									if (!details.children.isEmpty()) {
+										try (var table = new PlainTable("Dependencies")) {
+											for (var child : details.children) {
+												table.add("Status", child.status.label).tone(child.status.tone);
+												table.add("Cache", child.name).left();
+											}
+										}
+									} else
+										Notice.info("Cache has no dependencies.");
+								}
+								if (dview.is("Exception")) {
+									if (details.snapshot != null && details.snapshot.exception() != null)
+										SiteFragment.get().add(Html.pre().clazz("site-error").add(details.snapshot.exception()));
+									else
+										Notice.info("No exception was reported for this cache.");
+								}
 							}
 						}
 					}
+					if (view.is("Exception")) {
+						var error = exception != null && !empty
+							? new CachedException(exception).getFormattedCause()
+							: caches.sorted.stream()
+								.filter(e -> e.snapshot != null)
+								.map(e -> e.snapshot.exception())
+								.filter(x -> x != null)
+								.findFirst().orElse(null);
+						if (error != null)
+							SiteFragment.get().add(Html.pre().clazz("site-error").add(error));
+						else
+							Notice.info("No exception was reported.");
+					}
 				}
-				var error = exception != null && !empty
-					? new CachedException(exception).getFormattedCause()
-					: caches.sorted.stream()
-						.filter(e -> e.snapshot != null)
-						.map(e -> e.snapshot.exception())
-						.filter(x -> x != null)
-						.findFirst().orElse(null);
-				if (error != null)
-					SiteFragment.get().add(Html.pre().clazz("site-error").add(error));
 			}
 		}
 		fragment.render();

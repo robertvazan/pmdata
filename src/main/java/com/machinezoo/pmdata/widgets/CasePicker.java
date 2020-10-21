@@ -100,7 +100,7 @@ public class CasePicker implements AutoCloseable {
 							.add(c)))));
 			if (!taken) {
 				SiteFragment.temporary()
-					.run(() -> Notice.warn("Nothing selected. Pick one option manually."))
+					.run(() -> Notice.warn("Nothing selected. Pick one of the options."))
 					.render(empty.content());
 			}
 		}

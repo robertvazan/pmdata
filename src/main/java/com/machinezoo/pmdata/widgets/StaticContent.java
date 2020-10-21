@@ -2,6 +2,7 @@
 package com.machinezoo.pmdata.widgets;
 
 import com.machinezoo.noexception.*;
+import com.machinezoo.pmdata.formatters.*;
 import com.machinezoo.pmsite.*;
 import com.machinezoo.pushmode.dom.*;
 import com.machinezoo.stagean.*;
@@ -45,11 +46,19 @@ public class StaticContent {
 	public StaticContent add(String format, Object... args) {
 		return add(String.format(format, args));
 	}
+	public StaticContent add(Object data) {
+		return add(Pretty.object().format(data));
+	}
+	private Tone tone;
+	public StaticContent tone(Tone tone) {
+		this.tone = tone;
+		return this;
+	}
 	public void render() {
 		new ContentLabel(label)
 			.clazz(clazz)
 			.add(Html.div()
-				.clazz("static-content")
+				.clazz("static-content", tone != null ? tone.css() : null)
 				.add(content))
 			.render();
 	}
@@ -71,5 +80,8 @@ public class StaticContent {
 	}
 	public static void show(String label, String format, Object... args) {
 		new StaticContent(label).add(format, args).render();
+	}
+	public static void show(String label, Object data) {
+		new StaticContent(label).add(data).render();
 	}
 }
