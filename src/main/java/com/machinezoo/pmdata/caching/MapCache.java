@@ -16,9 +16,9 @@ public interface MapCache<K, V> extends PersistentCache<MapFile<K, V>>, Supplier
 	}
 	@Override
 	default Map<K, V> get() {
-		return snapshot().map();
+		return file().map();
 	}
 	default V get(K key) {
-		return snapshot().get(key);
+		return file().get(key);
 	}
 }

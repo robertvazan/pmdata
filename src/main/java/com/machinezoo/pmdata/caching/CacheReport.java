@@ -59,7 +59,8 @@ public class CacheReport {
 		}
 	}
 	private static class CacheInfo {
-		CacheState<?> cache;
+		PersistentCache<?> cache;
+		CacheState<?> state;
 		/*
 		 * Stringified cache ID.
 		 */
@@ -78,31 +79,33 @@ public class CacheReport {
 	}
 	private static class CacheCollection {
 		List<CacheInfo> sorted = new ArrayList<>();
-		Map<Object, CacheInfo> byId = new HashMap<>();
+		Map<PersistentCache<?>, CacheInfo> hashed = new HashMap<>();
 		/*
 		 * Depth-first search. Sorted cache list will always have dependencies sorted before dependent cache (child-first order).
 		 */
 		void collect(CacheInput input) {
 			for (var cache : input.snapshots().keySet()) {
-				if (!byId.containsKey(cache.id())) {
+				if (!hashed.containsKey(cache)) {
 					/*
 					 * Make sure the input we expand is the one recorded in CacheInfo.
 					 */
-					var dependencies = cache.input();
+					var state = PersistentCaches.query(cache);
+					var dependencies = state.input();
 					collect(dependencies);
 					/*
 					 * Guard against self-referencing caches.
 					 */
-					if (!byId.containsKey(cache.id())) {
+					if (!hashed.containsKey(cache)) {
 						var info = new CacheInfo();
 						info.cache = cache;
-						info.name = cache.id().toString();
+						info.state = state;
+						info.name = cache.toString();
 						info.snapshot = input.snapshot(cache);
 						info.children = StreamEx.of(dependencies.snapshots().keySet())
-							.map(c -> byId.get(c.id()))
+							.map(c -> hashed.get(c))
 							.sortedBy(e -> e.name)
 							.toList();
-						byId.put(cache.id(), info);
+						hashed.put(cache, info);
 						sorted.add(info);
 					}
 				}
@@ -138,9 +141,9 @@ public class CacheReport {
 			status = empty ? CacheStatus.EMPTY : CacheStatus.FAILED;
 		int concurrency = Runtime.getRuntime().availableProcessors();
 		for (var entry : caches.sorted) {
-			entry.progress = entry.cache.progress();
+			entry.progress = entry.state.progress();
 			if (entry.progress != null) {
-				if (entry.cache.started() == null)
+				if (entry.state.started() == null)
 					entry.status = CacheStatus.QUEUED;
 				else
 					entry.status = CacheStatus.RUNNING;
@@ -152,7 +155,7 @@ public class CacheReport {
 				entry.status = CacheStatus.FAILED;
 			else if (entry.snapshot.hash() == null)
 				entry.status = CacheStatus.EMPTY;
-			else if (!entry.cache.input().hash().equals(entry.snapshot.input()))
+			else if (!entry.state.input().hash().equals(entry.snapshot.input()))
 				entry.status = CacheStatus.STALE;
 			else if (entry.cache.policy().period() != null && ReactiveInstant.now().isAfter(entry.snapshot.refreshed().plus(entry.cache.policy().period())))
 				entry.status = CacheStatus.EXPIRED;
@@ -185,7 +188,7 @@ public class CacheReport {
 			if (concurrency <= 0)
 				refresh = false;
 			if (refresh) {
-				entry.cache.refresh();
+				entry.state.refresh();
 				--concurrency;
 			} else if (entry.status == CacheStatus.RUNNING || entry.status == CacheStatus.QUEUED)
 				--concurrency;
@@ -228,7 +231,7 @@ public class CacheReport {
 								var action = cancellable ? "Cancel" : status == CacheStatus.EMPTY ? "Populate" : "Refresh";
 								table.add("Action", fragment.nest("summary", key.toString())
 									.run(() -> new LinkButton(action)
-										.handle(() -> group.stream().map(g -> g.cache).forEach(cancellable ? CacheState::cancel : CacheState::refresh))
+										.handle(() -> group.stream().map(g -> g.state).forEach(cancellable ? CacheState::cancel : CacheState::refresh))
 										.render())
 									.content());
 								table.add("Count", group.size());
@@ -262,7 +265,7 @@ public class CacheReport {
 									.content(new DomFragment()
 										.add(String.format("Refreshing %s... ", entry.name))
 										.add(new LinkButton("Cancel")
-											.handle(entry.cache::cancel)
+											.handle(entry.state::cancel)
 											.html())
 										.add(Html.br())
 										.add(entry.progress.format()))
@@ -286,7 +289,7 @@ public class CacheReport {
 								var action = cancellable ? "Cancel" : status == CacheStatus.EMPTY ? "Populate" : "Refresh";
 								table.add("Action", fragment.nest("list", entry.name)
 									.run(() -> new LinkButton(action)
-										.handle(cancellable ? entry.cache::cancel : entry.cache::refresh)
+										.handle(cancellable ? entry.state::cancel : entry.state::refresh)
 										.render())
 									.content());
 								if (entry.snapshot != null) {
@@ -332,12 +335,12 @@ public class CacheReport {
 										.tone(details.status.tone)
 										.render();
 									StaticContent.show("Length of the longest dependent chain", details.depth);
-									StaticContent.show("Input hash", details.cache.input().hash());
+									StaticContent.show("Input hash", details.state.input().hash());
 									if (details.dependencyActivity != null)
 										StaticContent.show("Latest dependency activity", details.dependencyActivity);
 									if (details.latestActivity != null)
 										StaticContent.show("Latest recursive activity", details.latestActivity);
-									var started = details.cache.started();
+									var started = details.state.started();
 									if (started != null)
 										StaticContent.show("Refresh started", started);
 									if (details.progress != null)
@@ -359,7 +362,7 @@ public class CacheReport {
 										Notice.info("Cache is empty.");
 								}
 								if (dview.is("Parameters")) {
-									var parameters = details.cache.input().parameters();
+									var parameters = details.state.input().parameters();
 									if (!parameters.isEmpty()) {
 										try (var table = new PlainTable("Parameters")) {
 											for (var name : StreamEx.of(parameters.keySet()).sorted()) {

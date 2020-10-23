@@ -48,15 +48,15 @@ public class CacheInput {
 			inconsistent = true;
 		}
 	}
-	private Map<CacheState<?>, CacheSnapshot<?>> snapshots = new HashMap<>();
-	public synchronized Map<CacheState<?>, CacheSnapshot<?>> snapshots() {
+	private Map<PersistentCache<?>, CacheSnapshot<?>> snapshots = new HashMap<>();
+	public synchronized Map<PersistentCache<?>, CacheSnapshot<?>> snapshots() {
 		return frozen ? snapshots : new HashMap<>(snapshots);
 	}
 	private void modify() {
 		if (frozen)
 			throw new IllegalStateException("Cache input cannot be modified anymore.");
 	}
-	public synchronized <T extends CacheFile> void snapshot(CacheState<T> cache, CacheSnapshot<T> snapshot) {
+	public synchronized <T extends CacheFile> void snapshot(PersistentCache<T> cache, CacheSnapshot<T> snapshot) {
 		if (!snapshots.containsKey(cache)) {
 			modify();
 			snapshots.put(cache, snapshot);
@@ -66,7 +66,7 @@ public class CacheInput {
 		}
 	}
 	@SuppressWarnings("unchecked")
-	public synchronized <T extends CacheFile> CacheSnapshot<T> snapshot(CacheState<T> cache) {
+	public synchronized <T extends CacheFile> CacheSnapshot<T> snapshot(PersistentCache<T> cache) {
 		var snapshot = snapshots.get(cache);
 		if (snapshot == null) {
 			/*
@@ -74,7 +74,7 @@ public class CacheInput {
 			 */
 			if (!snapshots.containsKey(cache)) {
 				modify();
-				snapshots.put(cache, snapshot = cache.snapshot());
+				snapshots.put(cache, snapshot = CacheSnapshot.of(cache));
 			}
 		}
 		return (CacheSnapshot<T>)snapshot;
@@ -130,7 +130,7 @@ public class CacheInput {
 	public synchronized void unpack() {
 		var into = get();
 		for (var entry : snapshots.entrySet())
-			into.snapshot((CacheState<CacheFile>)entry.getKey(), (CacheSnapshot<CacheFile>)entry.getValue());
+			into.snapshot((PersistentCache<CacheFile>)entry.getKey(), (CacheSnapshot<CacheFile>)entry.getValue());
 		for (var entry : parameters.entrySet())
 			into.parameter(entry.getKey(), entry.getValue());
 		if (inconsistent)

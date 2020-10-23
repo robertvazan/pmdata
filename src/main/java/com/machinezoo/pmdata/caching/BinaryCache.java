@@ -10,7 +10,7 @@ public interface BinaryCache extends PersistentCache<BinaryFile> {
 		return BinaryFile.format();
 	}
 	default BinaryFile get() {
-		return cache().get();
+		return file();
 	}
 	default byte[] read() {
 		return get().read();

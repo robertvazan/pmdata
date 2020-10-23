@@ -15,6 +15,6 @@ public interface KryoCache<T> extends PersistentCache<KryoFile<T>>, Supplier<T> 
 	}
 	@Override
 	default T get() {
-		return snapshot().read();
+		return file().read();
 	}
 }

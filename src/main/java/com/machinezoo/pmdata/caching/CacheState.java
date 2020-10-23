@@ -5,88 +5,31 @@ import java.time.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.*;
-import java.util.function.*;
 import org.apache.commons.lang3.exception.*;
 import org.slf4j.*;
 import com.machinezoo.hookless.*;
 import com.machinezoo.hookless.util.*;
 import com.machinezoo.pmsite.utils.*;
-import com.machinezoo.stagean.*;
 
-@DraftApi("update() in addition to supply() that takes old CacheData as its parameter (may return the same)")
 public class CacheState<T extends CacheFile> {
 	private static final Logger logger = LoggerFactory.getLogger(CacheState.class);
-	private PersistentCache<T> id;
-	public PersistentCache<T> id() {
-		return id;
+	private final PersistentCache<T> cache;
+	public PersistentCache<T> cache() {
+		return cache;
 	}
-	public CacheState(PersistentCache<T> id) {
-		this.id = id;
-	}
-	private boolean defined;
-	private void configure() {
-		if (defined)
-			throw new IllegalStateException("Cache definition cannot be changed anymore.");
-	}
-	private CachePolicy policy = new CachePolicy();
-	public synchronized CachePolicy policy() {
-		return policy.clone();
-	}
-	public synchronized CacheState<T> policy(CachePolicy policy) {
-		Objects.requireNonNull(policy);
-		if (policy.period() != null && policy.mode() != CacheRefreshMode.AUTOMATIC)
-			throw new IllegalArgumentException("Period makes sense only with automatic refresh.");
-		configure();
-		this.policy = policy.clone();
-		return this;
-	}
-	private Runnable linker = () -> {
-	};
-	public synchronized CacheState<T> link(Runnable linker) {
-		Objects.requireNonNull(linker);
-		configure();
-		this.linker = linker;
-		return this;
-	}
-	private Supplier<T> supplier;
-	public synchronized CacheState<T> supply(Supplier<T> supplier) {
-		Objects.requireNonNull(supplier);
-		configure();
-		this.supplier = supplier;
-		return this;
-	}
-	/*
-	 * Duplicate cache IDs are going to be common due to copy-pasting of code fragments. We have to detect it.
-	 */
-	private static Set<Object> allIds = new HashSet<>();
-	/*
-	 * Check and freeze the defining properties declared above.
-	 * This is called automatically when the cache is first used.
-	 * It can be called explicitly if the app wishes to check cache definitions early.
-	 */
-	public synchronized CacheState<T> define() {
-		if (!defined) {
-			Objects.requireNonNull(id, "Cache ID must be configured.");
-			Objects.requireNonNull(supplier, "Supplier must be configured.");
-			synchronized (allIds) {
-				if (allIds.contains(id))
-					throw new IllegalStateException("Duplicate cache ID.");
-				allIds.add(id);
-			}
-			/*
-			 * Force loading of cache snapshot and directory cleanup.
-			 */
-			CacheSnapshot.of(id);
-			defined = true;
-			OwnerTrace.of(this).tag("id", id);
-		}
-		return this;
+	public CacheState(PersistentCache<T> cache) {
+		this.cache = cache;
+		/*
+		 * Force loading of cache snapshot and directory cleanup.
+		 */
+		CacheSnapshot.of(cache);
+		OwnerTrace.of(this).tag("cache", cache);
 	}
 	private CacheInput link() {
 		var input = new CacheInput();
 		try (var recording = input.record()) {
 			try {
-				linker.run();
+				cache.link();
 				input.freeze();
 				/*
 				 * Verify that input hash can be calculated. This will call toString() on all the parameters.
@@ -116,34 +59,7 @@ public class CacheState<T extends CacheFile> {
 		.tag("role", "links")
 		.target();
 	public CacheInput input() {
-		define();
 		return input.get();
-	}
-	/*
-	 * Result of the last supplier run. Null if there is none. EmptyCacheException is only thrown by get() below.
-	 */
-	public CacheSnapshot<T> snapshot() {
-		define();
-		return CacheSnapshot.of(id);
-	}
-	/*
-	 * Convenient access to commonly used snapshot methods, mediated through CacheInput.
-	 */
-	public T get() {
-		var snapshot = CacheInput.get().snapshot(this);
-		if (snapshot == null) {
-			if (policy.blocking())
-				CurrentReactiveScope.block();
-			throw new EmptyCacheException();
-		}
-		return snapshot.get();
-	}
-	/*
-	 * This has side effects like get() but without returning cached value or throwing.
-	 * It is intended to be used in linkers. It might be faster than get().
-	 */
-	public void touch() {
-		CacheInput.get().snapshot(this);
 	}
 	private final ReactiveVariable<Progress.Goal> progress = OwnerTrace
 		.of(new ReactiveVariable<Progress.Goal>())
@@ -162,7 +78,6 @@ public class CacheState<T extends CacheFile> {
 		return started.get();
 	}
 	public synchronized void cancel() {
-		define();
 		try (var nonreactive = ReactiveScope.ignore()) {
 			var goal = progress.get();
 			if (goal != null)
@@ -181,7 +96,6 @@ public class CacheState<T extends CacheFile> {
 		.executor();
 	private static final ReadWriteLock exclusivity = new ReentrantReadWriteLock();
 	public synchronized void refresh() {
-		define();
 		boolean permitted;
 		try (var nonreactive = ReactiveScope.ignore()) {
 			var goal = progress.get();
@@ -201,7 +115,7 @@ public class CacheState<T extends CacheFile> {
 					CacheInput input = null;
 					try {
 						goal.stage("Exclusivity");
-						var lock = policy.exclusive() ? exclusivity.writeLock() : exclusivity.readLock();
+						var lock = cache.policy().exclusive() ? exclusivity.writeLock() : exclusivity.readLock();
 						lock.lock();
 						try {
 							/*
@@ -238,15 +152,15 @@ public class CacheState<T extends CacheFile> {
 									 * It is nevertheless reasonable for linker-declared dependencies to be a superset of actually used dependencies.
 									 */
 									var inputScope = input.record();
-									var outputScope = CacheFiles.redirect(CacheFiles.directory(id))) {
-								data = supplier.get();
+									var outputScope = CacheFiles.redirect(CacheFiles.directory(cache))) {
+								data = cache.supply();
 								/*
 								 * Any reactive blocking means the data is not up to date even if input hash matches.
 								 */
 								if (CurrentReactiveScope.blocked())
 									throw new ReactiveBlockingException();
 							}
-							CacheSnapshot.update(id, data, input, started.get());
+							CacheSnapshot.update(cache, data, input, started.get());
 							logger.info("Refreshed {}.", this);
 						} finally {
 							lock.unlock();
@@ -270,7 +184,7 @@ public class CacheState<T extends CacheFile> {
 							 * This code must be synchronized, so that no concurrent refresh is created in between the condition and actual snapshot write.
 							 */
 							if (progress.get() == goal)
-								CacheSnapshot.update(id, ex, input, started.get());
+								CacheSnapshot.update(cache, ex, input, started.get());
 						}
 					}
 				} finally {
@@ -291,6 +205,6 @@ public class CacheState<T extends CacheFile> {
 	}
 	@Override
 	public synchronized String toString() {
-		return Optional.ofNullable((Object)id).orElse(CacheState.class.getSimpleName()).toString();
+		return Optional.ofNullable((Object)cache).orElse(CacheState.class.getSimpleName()).toString();
 	}
 }
