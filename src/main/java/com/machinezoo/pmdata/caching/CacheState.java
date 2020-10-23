@@ -17,13 +17,18 @@ public class CacheState<T extends CacheFile> {
 	public PersistentCache<T> cache() {
 		return cache;
 	}
-	public CacheState(PersistentCache<T> cache) {
+	private CacheState(PersistentCache<T> cache) {
 		this.cache = cache;
 		/*
 		 * Force loading of cache snapshot and directory cleanup.
 		 */
 		CacheSnapshot.of(cache);
 		OwnerTrace.of(this).tag("cache", cache);
+	}
+	private static final ConcurrentMap<PersistentCache<?>, CacheState<?>> all = new ConcurrentHashMap<>();
+	@SuppressWarnings("unchecked")
+	public static <T extends CacheFile> CacheState<T> of(PersistentCache<T> cache) {
+		return (CacheState<T>)all.computeIfAbsent(cache, key -> new CacheState<>(cache));
 	}
 	private CacheInput link() {
 		var input = new CacheInput();

@@ -89,7 +89,7 @@ public class CacheReport {
 					/*
 					 * Make sure the input we expand is the one recorded in CacheInfo.
 					 */
-					var state = PersistentCaches.query(cache);
+					var state = CacheState.of(cache);
 					var dependencies = state.input();
 					collect(dependencies);
 					/*
