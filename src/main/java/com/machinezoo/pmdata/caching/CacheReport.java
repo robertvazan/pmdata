@@ -291,7 +291,7 @@ public class CacheReport {
 									.content());
 								if (entry.snapshot != null) {
 									table.add("Size", Pretty.bytes().format(entry.snapshot.size()));
-									table.add("Cost", entry.snapshot.cost);
+									table.add("Cost", entry.snapshot.cost());
 									table.add("Updated", entry.snapshot.updated());
 									table.add("Refreshed", entry.snapshot.refreshed());
 								} else {

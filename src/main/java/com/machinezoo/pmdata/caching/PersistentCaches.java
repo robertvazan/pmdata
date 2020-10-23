@@ -7,8 +7,7 @@ public class PersistentCaches {
 	private static final ConcurrentMap<PersistentCache<?>, CacheState<?>> all = new ConcurrentHashMap<>();
 	@SuppressWarnings("unchecked")
 	static <T extends CacheFile> CacheState<T> query(PersistentCache<T> cache) {
-		return (CacheState<T>)all.computeIfAbsent(cache, key -> new CacheState<>(cache.format())
-			.id(cache)
+		return (CacheState<T>)all.computeIfAbsent(cache, key -> new CacheState<>(cache)
 			.policy(cache.policy())
 			.link(cache::link)
 			.supply(cache::supply));
