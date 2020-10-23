@@ -26,7 +26,7 @@ public class MapDbFile implements CacheFile {
 		Exceptions.wrap().run(() -> Files.createDirectories(path.getParent()));
 	}
 	public MapDbFile() {
-		this(CacheOutput.random());
+		this(CacheFiles.create());
 	}
 	public static CacheFormat<MapDbFile> format() {
 		return new CacheFormat<>() {

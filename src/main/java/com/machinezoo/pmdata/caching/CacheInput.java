@@ -1,8 +1,10 @@
 // Part of PMData: https://pmdata.machinezoo.com
 package com.machinezoo.pmdata.caching;
 
+import java.nio.charset.*;
 import java.util.*;
 import java.util.function.*;
+import com.google.common.hash.*;
 import com.machinezoo.noexception.*;
 import one.util.streamex.*;
 
@@ -140,8 +142,12 @@ public class CacheInput {
 			+ StreamEx.of(parameters.keySet()).sorted().map(k -> k + " = " + Objects.toString(parameters.get(k)) + "\n").joining()
 			+ StreamEx.of(snapshots.keySet()).map(c -> c + " = " + Optional.ofNullable(snapshots.get(c)).map(s -> s.hash()).orElse("empty") + "\n").sorted().joining();
 	}
+	private static String hashId(String text) {
+		var hash = Hashing.sha256().hashString(text, StandardCharsets.UTF_8).asBytes();
+		return Base64.getUrlEncoder().encodeToString(hash).replace("=", "");
+	}
 	private String hash;
 	public synchronized String hash() {
-		return frozen ? hash : CacheState.hashId(toString());
+		return frozen ? hash : hashId(toString());
 	}
 };

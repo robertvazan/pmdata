@@ -28,7 +28,7 @@ public class BinaryFile implements CacheFile {
 		Exceptions.wrap().run(() -> Files.createDirectories(path.getParent()));
 	}
 	public BinaryFile() {
-		this(CacheOutput.random());
+		this(CacheFiles.create());
 	}
 	public static CacheFormat<BinaryFile> format() {
 		return new CacheFormat<>() {
