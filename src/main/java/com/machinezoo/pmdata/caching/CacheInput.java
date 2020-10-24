@@ -3,13 +3,18 @@ package com.machinezoo.pmdata.caching;
 
 import java.nio.charset.*;
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.function.*;
+import org.slf4j.*;
 import com.google.common.hash.*;
+import com.machinezoo.hookless.*;
+import com.machinezoo.hookless.util.*;
 import com.machinezoo.noexception.*;
 import one.util.streamex.*;
 
 public class CacheInput {
-	public static CacheInput NONE = new CacheInput();
+	private static final Logger logger = LoggerFactory.getLogger(CacheInput.class);
+	public static final CacheInput NONE = new CacheInput();
 	static {
 		NONE.freeze();
 	}
@@ -118,14 +123,6 @@ public class CacheInput {
 		}
 		return (T)stored;
 	}
-	public synchronized void freeze() {
-		if (!frozen) {
-			snapshots = Collections.unmodifiableMap(snapshots);
-			parameters = Collections.unmodifiableMap(parameters);
-			hash = hash();
-			frozen = true;
-		}
-	}
 	@SuppressWarnings("unchecked")
 	public synchronized void unpack() {
 		var into = get();
@@ -150,4 +147,57 @@ public class CacheInput {
 	public synchronized String hash() {
 		return frozen ? hash : hashId(toString());
 	}
-};
+	public synchronized void freeze() {
+		if (!frozen) {
+			snapshots = Collections.unmodifiableMap(snapshots);
+			parameters = Collections.unmodifiableMap(parameters);
+			hash = hash();
+			frozen = true;
+		}
+	}
+	private static CacheInput link(PersistentCache<?> cache) {
+		var input = new CacheInput();
+		try (var recording = input.record()) {
+			try {
+				cache.link();
+				input.freeze();
+				/*
+				 * Verify that input hash can be calculated. This will call toString() on all the parameters.
+				 */
+				input.hash();
+			} catch (Throwable ex) {
+				/*
+				 * Don't always log the exception. Stay silent if:
+				 * - there's reactive blocking
+				 * - the exception was caused by empty cache
+				 * - there's any empty cache recorded in input (should also cover cases when EmptyCacheException is thrown)
+				 * - there's any failing or cancelled cache recorded in input
+				 * 
+				 * Cancellation flags are ignored. Cancellation alone is not an error.
+				 * Cancellation flag does not hide persisted exception either. It is therefore safe to ignore.
+				 */
+				if (!CurrentReactiveScope.blocked() && !input.snapshots().values().stream().anyMatch(s -> s == null || s.exception() != null))
+					logger.warn("Persistent cache linker threw an exception.", ex);
+				throw ex;
+			}
+		}
+		return input;
+	}
+	private static final ConcurrentMap<PersistentCache<?>, ReactiveWorker<CacheInput>> caches = new ConcurrentHashMap<>();
+	/*
+	 * CacheInput as captured by this method has several flaws:
+	 * - It can be out of date.
+	 * - It could reactively block.
+	 * - Exception might be thrown instead of returning input description.
+	 * 
+	 * These are all legitimate results. Callers have to deal with them.
+	 */
+	public static CacheInput of(PersistentCache<?> cache) {
+		var worker = caches.computeIfAbsent(cache, key -> OwnerTrace
+			.of(new ReactiveWorker<CacheInput>(() -> link(cache)))
+			.parent(CacheInput.class)
+			.tag("cache", cache)
+			.target());
+		return worker.get();
+	}
+}

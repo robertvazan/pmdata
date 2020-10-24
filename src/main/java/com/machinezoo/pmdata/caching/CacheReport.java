@@ -7,6 +7,7 @@ import java.util.*;
 import java.util.stream.*;
 import org.apache.commons.collections4.comparators.*;
 import org.apache.commons.lang3.exception.*;
+import com.machinezoo.hookless.*;
 import com.machinezoo.hookless.time.*;
 import com.machinezoo.hookless.util.*;
 import com.machinezoo.pmdata.formatters.*;
@@ -42,6 +43,7 @@ public class CacheReport {
 		STALE(Tone.WARNING, "Stale", "Content depends on stale cache."),
 		EMPTY(Tone.WARNING, "Empty", "Content depends on uninitialized cache."),
 		FAILED(Tone.FAILURE, "Failed", "Exception was thrown while generating content."),
+		LINKING(Tone.PROGRESS, "Linking", "Cache graph is being constructed."),
 		QUEUED(Tone.PROGRESS, "Queued", "Cache refresh is pending."),
 		RUNNING(Tone.PROGRESS, "Refreshing", "Cache refresh is in progress."),
 		CANCELLED(Tone.WARNING, "Cancelled", "Cache refresh has been cancelled.");
@@ -65,6 +67,7 @@ public class CacheReport {
 		 * Stringified cache ID.
 		 */
 		String name;
+		ReactiveValue<CacheInput> input;
 		CacheSnapshot<?> snapshot;
 		List<CacheInfo> children;
 		/*
@@ -86,25 +89,37 @@ public class CacheReport {
 		void collect(CacheInput input) {
 			for (var cache : input.snapshots().keySet()) {
 				if (!hashed.containsKey(cache)) {
+					var info = new CacheInfo();
+					info.cache = cache;
 					/*
 					 * Make sure the input we expand is the one recorded in CacheInfo.
 					 */
-					var thread = CacheThread.of(cache);
-					var dependencies = thread.input();
-					collect(dependencies);
+					info.thread = CacheThread.of(cache);
+					/*
+					 * Do not propagate blocking from CacheInput. It could be blocking for a long time or forever.
+					 */
+					try (var nonblocking = ReactiveScope.nonblocking()) {
+						/*
+						 * Do not propagate exception from CacheInput. It could be failing permanently.
+						 * It's better to capture the exception and report it later.
+						 */
+						info.input = ReactiveValue.capture(() -> CacheInput.of(cache));
+					}
+					if (info.input.result() != null)
+						collect(info.input.result());
 					/*
 					 * Guard against self-referencing caches.
 					 */
 					if (!hashed.containsKey(cache)) {
-						var info = new CacheInfo();
-						info.cache = cache;
-						info.thread = thread;
 						info.name = cache.toString();
 						info.snapshot = input.snapshot(cache);
-						info.children = StreamEx.of(dependencies.snapshots().keySet())
-							.map(c -> hashed.get(c))
-							.sortedBy(e -> e.name)
-							.toList();
+						if (info.input.result() != null) {
+							info.children = StreamEx.of(info.input.result().snapshots().keySet())
+								.map(c -> hashed.get(c))
+								.sortedBy(e -> e.name)
+								.toList();
+						} else
+							info.children = Collections.emptyList();
 						hashed.put(cache, info);
 						sorted.add(info);
 					}
@@ -147,15 +162,17 @@ public class CacheReport {
 					entry.status = CacheStatus.QUEUED;
 				else
 					entry.status = CacheStatus.RUNNING;
-			} else if (entry.snapshot == null)
+			} else if (entry.input.blocking())
+				entry.status = CacheStatus.LINKING;
+			else if (entry.snapshot == null)
 				entry.status = CacheStatus.EMPTY;
 			else if (entry.snapshot.cancelled() && ReactiveDuration.between(entry.snapshot.refreshed(), ReactiveInstant.now()).compareTo(Duration.ofSeconds(3)) < 0)
 				entry.status = CacheStatus.CANCELLED;
-			else if (entry.snapshot.exception() != null)
+			else if (entry.input.exception() != null || entry.snapshot.exception() != null)
 				entry.status = CacheStatus.FAILED;
 			else if (entry.snapshot.hash() == null)
 				entry.status = CacheStatus.EMPTY;
-			else if (!entry.thread.input().hash().equals(entry.snapshot.input()))
+			else if (!entry.input.result().hash().equals(entry.snapshot.input()))
 				entry.status = CacheStatus.STALE;
 			else if (entry.cache.policy().period() != null && ReactiveInstant.now().isAfter(entry.snapshot.refreshed().plus(entry.cache.policy().period())))
 				entry.status = CacheStatus.EXPIRED;
@@ -329,13 +346,15 @@ public class CacheReport {
 							}
 							if (details != null) {
 								StaticContent.show("Selected cache", details.name);
+								if (details.input.blocking())
+									Notice.warn("Cache linker is blocking. Some information might not be available.");
 								if (dview.is("Cache")) {
 									new StaticContent("Status")
 										.add(details.status.toString())
 										.tone(details.status.tone)
 										.render();
 									StaticContent.show("Length of the longest dependent chain", details.depth);
-									StaticContent.show("Input hash", details.thread.input().hash());
+									StaticContent.show("Input hash", details.input.result() != null ? details.input.result().hash() : "(unavailable)");
 									if (details.dependencyActivity != null)
 										StaticContent.show("Latest dependency activity", details.dependencyActivity);
 									if (details.latestActivity != null)
@@ -362,16 +381,19 @@ public class CacheReport {
 										Notice.info("Cache is empty.");
 								}
 								if (dview.is("Parameters")) {
-									var parameters = details.thread.input().parameters();
-									if (!parameters.isEmpty()) {
-										try (var table = new PlainTable("Parameters")) {
-											for (var name : StreamEx.of(parameters.keySet()).sorted()) {
-												table.add("Name", name).left();
-												table.add("Value", parameters.get(name)).left();
+									if (details.input.result() != null) {
+										var parameters = details.input.result().parameters();
+										if (!parameters.isEmpty()) {
+											try (var table = new PlainTable("Parameters")) {
+												for (var name : StreamEx.of(parameters.keySet()).sorted()) {
+													table.add("Name", name).left();
+													table.add("Value", parameters.get(name)).left();
+												}
 											}
-										}
+										} else
+											Notice.info("Cache has no parameters.");
 									} else
-										Notice.info("Cache has no parameters.");
+										Notice.info("Cache parameters have not been determined yet.");
 								}
 								if (dview.is("Dependencies")) {
 									if (!details.children.isEmpty()) {
@@ -385,7 +407,9 @@ public class CacheReport {
 										Notice.info("Cache has no dependencies.");
 								}
 								if (dview.is("Exception")) {
-									if (details.snapshot != null && details.snapshot.exception() != null)
+									if (details.input.exception() != null)
+										SiteFragment.get().add(Html.pre().clazz("site-error").add(new CachedException(details.input.exception()).getFormattedCause()));
+									else if (details.snapshot != null && details.snapshot.exception() != null)
 										SiteFragment.get().add(Html.pre().clazz("site-error").add(details.snapshot.exception()));
 									else
 										Notice.info("No exception was reported for this cache.");
@@ -396,10 +420,16 @@ public class CacheReport {
 					if (view.is("Exception")) {
 						var error = exception != null && !empty
 							? new CachedException(exception).getFormattedCause()
-							: caches.sorted.stream()
-								.filter(e -> e.snapshot != null)
-								.map(e -> e.snapshot.exception())
-								.filter(x -> x != null)
+							: Stream
+								.concat(
+									caches.sorted.stream()
+										.map(e -> e.input.exception())
+										.filter(x -> x != null)
+										.map(x -> new CachedException(x).getFormattedCause()),
+									caches.sorted.stream()
+										.filter(e -> e.snapshot != null)
+										.map(e -> e.snapshot.exception())
+										.filter(x -> x != null))
 								.findFirst().orElse(null);
 						if (error != null)
 							SiteFragment.get().add(Html.pre().clazz("site-error").add(error));

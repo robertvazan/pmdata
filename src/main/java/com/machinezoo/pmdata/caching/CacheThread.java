@@ -25,42 +25,6 @@ public class CacheThread<T extends CacheFile> {
 	public static <T extends CacheFile> CacheThread<T> of(PersistentCache<T> cache) {
 		return (CacheThread<T>)all.computeIfAbsent(cache, key -> new CacheThread<>(cache));
 	}
-	private CacheInput link() {
-		var input = new CacheInput();
-		try (var recording = input.record()) {
-			try {
-				cache.link();
-				input.freeze();
-				/*
-				 * Verify that input hash can be calculated. This will call toString() on all the parameters.
-				 */
-				input.hash();
-			} catch (Throwable ex) {
-				/*
-				 * Don't always log the exception. Stay silent if:
-				 * - there's reactive blocking
-				 * - the exception was caused by empty cache
-				 * - there's any empty cache recorded in input (should also cover cases when EmptyCacheException is thrown)
-				 * - there's any failing or cancelled cache recorded in input
-				 * 
-				 * Cancellation flags are ignored. Cancellation alone is not an error.
-				 * Cancellation flag does not hide persisted exception either. It is therefore safe to ignore.
-				 */
-				if (!CurrentReactiveScope.blocked() && !input.snapshots().values().stream().anyMatch(s -> s == null || s.exception() != null))
-					logger.warn("Persistent cache linker threw an exception.", ex);
-				throw ex;
-			}
-		}
-		return input;
-	}
-	private final ReactiveWorker<CacheInput> input = OwnerTrace
-		.of(new ReactiveWorker<>(this::link))
-		.parent(this)
-		.tag("role", "links")
-		.target();
-	public CacheInput input() {
-		return input.get();
-	}
 	private final ReactiveVariable<Progress.Goal> progress = OwnerTrace
 		.of(new ReactiveVariable<Progress.Goal>())
 		.parent(this)
@@ -103,15 +67,6 @@ public class CacheThread<T extends CacheFile> {
 				var lock = cache.policy().exclusive() ? exclusivity.writeLock() : exclusivity.readLock();
 				lock.lock();
 				try {
-					/*
-					 * We are delaying linker query as much as possible,
-					 * so that it incorporates results of cache refreshes scheduled before this one.
-					 * Parallelism and async nature of ReactiveWorker however makes this unreliable.
-					 * Automated scheduling is however smart enough to avoid scheduling the refresh too early.
-					 * It is very unusual for linker to keep blocking for a long time.
-					 */
-					goal.stage("Linker");
-					input = ReactiveFuture.supplyReactive(this::input).join();
 					logger.info("Refreshing {}.", this);
 					synchronized (this) {
 						/*
@@ -130,15 +85,32 @@ public class CacheThread<T extends CacheFile> {
 							 * Create reactive scope, so that we can check for reactive blocking and so that reactive freezing works.
 							 */
 							var reactiveScope = new ReactiveScope().enter();
-							/*
-							 * In order to enforce consistency between linker and supplier, we will run supplier in frozen CacheInput context created by linker.
-							 * If supplier uses something not declared by linker, exception will be thrown.
-							 * Unfortunately, this does not allow us to detect superfluous dependencies declared by linker.
-							 * It is nevertheless reasonable for linker-declared dependencies to be a superset of actually used dependencies.
-							 */
-							var inputScope = input.record();
 							var outputScope = CacheFiles.redirect(CacheFiles.directory(cache))) {
-						data = cache.supply();
+						/*
+						 * We are delaying linker query as much as possible,
+						 * so that it incorporates results of cache refreshes scheduled before this one.
+						 * Parallelism and async nature of ReactiveWorker however makes this unreliable.
+						 * Automated scheduling is however smart enough to avoid scheduling the refresh too early.
+						 * 
+						 * We will not block this thread (via ReactiveFuture.supplyReactive()) until linker output is non-blocking,
+						 * because that could cause very long blocking or even deadlocks.
+						 */
+						input = CacheInput.of(cache);
+						/*
+						 * If the linker throws, just fail the whole refresh.
+						 * If it reactively blocks, consider this refresh to have started prematurely and fail it immediately too.
+						 */
+						if (CurrentReactiveScope.blocked())
+							throw new ReactiveBlockingException();
+						/*
+						 * In order to enforce consistency between linker and supplier, we will run supplier in frozen CacheInput context created by linker.
+						 * If supplier uses something not declared by linker, exception will be thrown.
+						 * Unfortunately, this does not allow us to detect superfluous dependencies declared by linker.
+						 * It is nevertheless reasonable for linker-declared dependencies to be a superset of actually used dependencies.
+						 */
+						try (var inputScope = input.record()) {
+							data = cache.supply();
+						}
 						/*
 						 * Any reactive blocking means the data is not up to date even if input hash matches.
 						 */
