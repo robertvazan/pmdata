@@ -153,12 +153,12 @@ public class CacheSnapshot<T extends CacheFile> {
 				.target();
 			/*
 			 * Snapshot access implies the application is interested in automatic cache refresh.
-			 * Hinting the cache trigger here is cheap, because this code runs once.
+			 * Hinting the cache thread here is cheap, because this code runs once.
 			 * 
-			 * The cache trigger may immediately start running in another thread,
+			 * The cache thread may immediately start running in another thread,
 			 * which is safe, because the ConcurrentMap will wait for this supplier to finish.
 			 */
-			CacheTrigger.start(cache);
+			CacheThread.start(cache);
 			return variable;
 		});
 	}

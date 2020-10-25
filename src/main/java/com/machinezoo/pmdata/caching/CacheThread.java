@@ -7,26 +7,24 @@ import com.machinezoo.hookless.time.*;
 import one.util.streamex.*;
 
 /*
- * Automatic refresh scheduling. There's one trigger per cache.
- * This class shouldn't be ever created/started for caches with manual refresh.
+ * Automatic refresh scheduling. There's one thread per cache except for manual caches.
  */
-class CacheTrigger extends ReactiveThread {
+class CacheThread extends ReactiveThread {
 	private final PersistentCache<?> cache;
-	private CacheTrigger(PersistentCache<?> cache) {
+	private CacheThread(PersistentCache<?> cache) {
 		this.cache = cache;
 	}
-	private static final ConcurrentMap<PersistentCache<?>, CacheTrigger> all = new ConcurrentHashMap<>();
+	private static final ConcurrentMap<PersistentCache<?>, CacheThread> all = new ConcurrentHashMap<>();
 	/*
-	 * The trigger has no way to start itself automatically.
-	 * It needs to be hinted that some cache is in use.
+	 * The thread has no way to start itself automatically. It needs to be hinted that some cache is in use.
 	 * This method is safe to call multiple times.
 	 */
 	static void start(PersistentCache<?> cache) {
 		/*
-		 * Do not even create triggers for caches with manual refresh.
+		 * Do not even create thread for caches with manual refresh.
 		 */
 		if (cache.policy().mode() != CacheRefreshMode.MANUAL)
-			all.computeIfAbsent(cache, CacheTrigger::new).start();
+			all.computeIfAbsent(cache, CacheThread::new).start();
 	}
 	@Override
 	protected void run() {
