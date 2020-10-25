@@ -72,10 +72,10 @@ public class MapDbFile implements CacheFile {
 	}
 	private final Map<String, HTreeMap<?, ?>> maps = new HashMap<>();
 	@SuppressWarnings("unchecked")
-	public synchronized <K, V> HTreeMap<K, V> map(String name, Serializer<K> keySerializer, Serializer<V> valueSerializer, long capacity) {
+	public synchronized <K, V> HTreeMap<K, V> map(String name, long capacity) {
 		HTreeMap<?, ?> map = maps.get(name);
 		if (map == null) {
-			var maker = db().hashMap(name, keySerializer, valueSerializer);
+			var maker = db().hashMap(name, new KryoMapDbSerializer<K>(), new KryoMapDbSerializer<V>());
 			/*
 			 * MapDb cannot dynamically adjust map layout. Default layout allows only 512K entries.
 			 * Beyond that, collisions will kill performance. We cannot just set very high values,
@@ -115,14 +115,8 @@ public class MapDbFile implements CacheFile {
 		}
 		return (HTreeMap<K, V>)map;
 	}
-	public <K, V> HTreeMap<K, V> map(String name, Serializer<K> keySerializer, Serializer<V> valueSerializer) {
-		return map(name, keySerializer, valueSerializer, -1);
-	}
-	public <K, V> HTreeMap<K, V> map(String name, Class<K> keyType, Class<V> valueType, long capacity) {
-		return map(name, MapDbSerializers.get(keyType), MapDbSerializers.get(valueType), capacity);
-	}
-	public <K, V> HTreeMap<K, V> map(String name, Class<K> keyType, Class<V> valueType) {
-		return map(name, keyType, valueType, -1);
+	public <K, V> HTreeMap<K, V> map(String name) {
+		return map(name, -1);
 	}
 	@Override
 	public synchronized void commit() {

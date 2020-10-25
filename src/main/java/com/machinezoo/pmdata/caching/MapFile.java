@@ -10,37 +10,24 @@ import com.machinezoo.noexception.*;
 
 public class MapFile<K, V> implements CacheFile {
 	private final MapDbFile file;
-	private final Class<K> keyType;
-	private final Class<V> valueType;
 	private final long capacity;
-	private MapFile(MapDbFile file, Class<K> keyType, Class<V> valueType, long capacity) {
+	private MapFile(MapDbFile file, long capacity) {
 		this.file = file;
-		this.keyType = keyType;
-		this.valueType = valueType;
 		this.capacity = capacity;
 	}
-	public MapFile(Path path, Class<K> keyType, Class<V> valueType, long capacity) {
-		this(new MapDbFile(path), keyType, valueType, capacity);
-	}
 	public MapFile(Path path, long capacity) {
-		this(path, null, null, capacity);
-	}
-	public MapFile(Class<K> keyType, Class<V> valueType, long capacity) {
-		this(new MapDbFile(), keyType, valueType, capacity);
+		this(new MapDbFile(path), capacity);
 	}
 	public MapFile(long capacity) {
-		this(null, null, capacity);
+		this(new MapDbFile(), capacity);
 	}
-	public static <K, V> CacheFormat<MapFile<K, V>> format(Class<K> keyType, Class<V> valueType) {
+	public static <K, V> CacheFormat<MapFile<K, V>> format() {
 		return new CacheFormat<>() {
 			@Override
 			public MapFile<K, V> load(Path path) {
-				return new MapFile<>(MapDbFile.format().load(path), keyType, valueType, -1);
+				return new MapFile<>(MapDbFile.format().load(path), -1);
 			}
 		};
-	}
-	public static <K, V> CacheFormat<MapFile<K, V>> format() {
-		return format(null, null);
 	}
 	@Override
 	public Path path() {
@@ -63,7 +50,7 @@ public class MapFile<K, V> implements CacheFile {
 				 */
 				cached = keySize + valueSize > 100;
 			}
-			map = file.map("map", keyType, valueType, capacity);
+			map = file.map("map", capacity);
 		}
 	}
 	public void put(K key, V value) {
