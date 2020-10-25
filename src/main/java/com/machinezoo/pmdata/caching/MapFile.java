@@ -84,7 +84,7 @@ public class MapFile<K, V> implements CacheFile {
 			file.commit();
 		}
 	}
-	private static class ParsedEntry<V> implements ComputeCache<V> {
+	private static class ParsedEntry<V> extends ComputeCache<V> {
 		final MapFile<?, V> file;
 		final Object key;
 		ParsedEntry(MapFile<?, V> file, Object key) {

@@ -49,7 +49,7 @@ public class KryoFile<T> implements CacheFile {
 		var input = new Input(bytes);
 		return (T)ThreadLocalKryo.get().readClassAndObject(input);
 	}
-	private static class ParsedContent<T> implements ComputeCache<T> {
+	private static class ParsedContent<T> extends ComputeCache<T> {
 		final KryoFile<T> file;
 		ParsedContent(KryoFile<T> file) {
 			this.file = file;

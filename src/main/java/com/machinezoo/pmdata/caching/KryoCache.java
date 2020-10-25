@@ -3,18 +3,18 @@ package com.machinezoo.pmdata.caching;
 
 import java.util.function.*;
 
-public interface KryoCache<T> extends PersistentCache<KryoFile<T>>, Supplier<T> {
-	T compute();
+public abstract class KryoCache<T> extends PersistentCache<KryoFile<T>> implements Supplier<T> {
+	public abstract T compute();
 	@Override
-	default CacheFormat<KryoFile<T>> format() {
+	public CacheFormat<KryoFile<T>> format() {
 		return KryoFile.format();
 	}
 	@Override
-	default KryoFile<T> supply() {
+	public KryoFile<T> supply() {
 		return KryoFile.of(compute());
 	}
 	@Override
-	default T get() {
+	public T get() {
 		return file().read();
 	}
 }

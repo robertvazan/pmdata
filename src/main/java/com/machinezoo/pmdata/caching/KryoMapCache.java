@@ -3,8 +3,8 @@ package com.machinezoo.pmdata.caching;
 
 import java.util.*;
 
-public interface KryoMapCache<K, V> extends KryoCache<Map<K, V>> {
-	default V get(K key) {
+public abstract class KryoMapCache<K, V> extends KryoCache<Map<K, V>> {
+	public V get(K key) {
 		return get().get(key);
 	}
 }
