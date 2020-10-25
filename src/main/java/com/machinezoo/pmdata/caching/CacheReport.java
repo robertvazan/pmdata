@@ -75,7 +75,7 @@ public class CacheReport {
 		 */
 		int depth;
 		CacheStatus status;
-		Progress.Goal progress;
+		Progress progress;
 	}
 	private static class CacheCollection {
 		List<CacheInfo> sorted = new ArrayList<>();

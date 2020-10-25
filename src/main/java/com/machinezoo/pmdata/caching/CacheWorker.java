@@ -23,12 +23,12 @@ public class CacheWorker<T extends CacheFile> {
 	public PersistentCache<T> cache() {
 		return owner.cache;
 	}
-	private final ReactiveVariable<Progress.Goal> progress = OwnerTrace
-		.of(new ReactiveVariable<Progress.Goal>())
+	private final ReactiveVariable<Progress> progress = OwnerTrace
+		.of(new ReactiveVariable<Progress>())
 		.parent(this)
 		.tag("role", "progress")
 		.target();
-	public Progress.Goal progress() {
+	public Progress progress() {
 		return progress.get();
 	}
 	private final ReactiveVariable<Instant> started = OwnerTrace
@@ -57,28 +57,31 @@ public class CacheWorker<T extends CacheFile> {
 		.lowestPriority()
 		.executor();
 	private static final ReadWriteLock exclusivity = new ReentrantReadWriteLock();
-	private void refresh(Progress.Goal goal) {
+	private void refresh(Progress progress) {
 		try {
 			CacheInput input = null;
 			try {
-				goal.stage("Exclusivity");
+				/*
+				 * Remove the "Scheduling" child added in schedule().
+				 */
+				progress.remove(progress.children().get(0));
 				var lock = owner.policy.exclusive() ? exclusivity.writeLock() : exclusivity.readLock();
-				lock.lock();
+				progress.run("Exclusivity", () -> lock.lock());
 				try {
 					logger.info("Refreshing {}.", this);
 					synchronized (this) {
 						/*
-						 * This must be synchronized, so that it does not run concurrently with related code above
+						 * This must be synchronized, so that it does not run concurrently with related code in schedule()
 						 * that also accesses goal's cancelled property and start timestamp at the same time.
-						 * That way we can be sure that either the goal throws CancellationException
+						 * That way we can be sure that either the progress tracker throws CancellationException
 						 * or there is no concurrently running refresh and we can safely start one.
 						 */
-						goal.stageOff();
+						progress.tick();
 						started.set(Instant.now());
 					}
 					T data;
 					try (
-							var goalScope = goal.track();
+							var goalScope = progress.track();
 							/*
 							 * Create reactive scope, so that we can check for reactive blocking and so that reactive freezing works.
 							 */
@@ -138,7 +141,7 @@ public class CacheWorker<T extends CacheFile> {
 					 * In order to detect this situation, we will check whether our goal is the current goal.
 					 * This code must be synchronized, so that no concurrent refresh is created in between the condition and actual snapshot write.
 					 */
-					if (progress.get() == goal)
+					if (this.progress.get() == progress)
 						CacheSnapshot.update(owner, ex, input, started.get());
 				}
 			}
@@ -149,8 +152,8 @@ public class CacheWorker<T extends CacheFile> {
 				 * our goal might no longer be the one stored in the reactive variable.
 				 * In that case we should do nothing but quietly terminate.
 				 */
-				if (progress.get() == goal) {
-					progress.set(null);
+				if (this.progress.get() == progress) {
+					this.progress.set(null);
 					started.set(null);
 				}
 			}
@@ -159,19 +162,19 @@ public class CacheWorker<T extends CacheFile> {
 	public synchronized void schedule() {
 		boolean permitted;
 		try (var nonreactive = ReactiveScope.ignore()) {
-			var goal = progress.get();
+			var progress = this.progress.get();
 			/*
 			 * We can ignore cancelled refresh if it is just queued but not started yet.
 			 * Its goal will throw CancellationException when it is about to start.
 			 */
-			permitted = goal == null || goal.cancelled() && started.get() == null;
+			permitted = progress == null || progress.cancelled() && started.get() == null;
 		}
 		if (permitted) {
-			var goal = new Progress.Goal();
-			goal.stage("Scheduling");
-			progress.set(goal);
+			var progress = new Progress();
+			progress.add(new Progress("Scheduling"));
+			this.progress.set(progress);
 			logger.info("Scheduling {}.", this);
-			executor.submit(() -> refresh(goal));
+			executor.submit(() -> refresh(progress));
 		}
 	}
 	@Override

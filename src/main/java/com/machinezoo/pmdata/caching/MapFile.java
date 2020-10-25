@@ -191,13 +191,13 @@ public class MapFile<K, V> implements CacheFile {
 	}
 	public static <K, V> MapFile<K, V> of(Collection<K> keys, Function<K, V> function) {
 		var file = new MapFile<K, V>(keys.size());
-		for (var key : Progress.loop(keys))
+		for (var key : Progress.get().loop(keys))
 			file.put(key, function.apply(key));
 		return file;
 	}
 	public static <K, V> MapFile<K, V> of(K[] keys, Function<K, V> function) {
 		var file = new MapFile<K, V>(keys.length);
-		for (var key : Progress.loop(keys))
+		for (var key : Progress.get().loop(keys))
 			file.put(key, function.apply(key));
 		return file;
 	}
