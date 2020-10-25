@@ -10,20 +10,20 @@ import com.machinezoo.hookless.*;
 import com.machinezoo.hookless.util.*;
 import com.machinezoo.pmsite.utils.*;
 
-public class CacheThread<T extends CacheFile> {
-	private static final Logger logger = LoggerFactory.getLogger(CacheThread.class);
+public class CacheWorker<T extends CacheFile> {
+	private static final Logger logger = LoggerFactory.getLogger(CacheWorker.class);
 	private final PersistentCache<T> cache;
 	public PersistentCache<T> cache() {
 		return cache;
 	}
-	private CacheThread(PersistentCache<T> cache) {
+	private CacheWorker(PersistentCache<T> cache) {
 		this.cache = cache;
 		OwnerTrace.of(this).tag("cache", cache);
 	}
-	private static final ConcurrentMap<PersistentCache<?>, CacheThread<?>> all = new ConcurrentHashMap<>();
+	private static final ConcurrentMap<PersistentCache<?>, CacheWorker<?>> all = new ConcurrentHashMap<>();
 	@SuppressWarnings("unchecked")
-	public static <T extends CacheFile> CacheThread<T> of(PersistentCache<T> cache) {
-		return (CacheThread<T>)all.computeIfAbsent(cache, key -> new CacheThread<>(cache));
+	public static <T extends CacheFile> CacheWorker<T> of(PersistentCache<T> cache) {
+		return (CacheWorker<T>)all.computeIfAbsent(cache, key -> new CacheWorker<>(cache));
 	}
 	private final ReactiveVariable<Progress.Goal> progress = OwnerTrace
 		.of(new ReactiveVariable<Progress.Goal>())
@@ -54,7 +54,7 @@ public class CacheThread<T extends CacheFile> {
 	 * Maybe we should in the future expose special heavy thread pool for cache parallelization.
 	 */
 	private static final ExecutorService executor = new SiteThread()
-		.owner(CacheThread.class)
+		.owner(CacheWorker.class)
 		.hardwareParallelism()
 		.lowestPriority()
 		.executor();

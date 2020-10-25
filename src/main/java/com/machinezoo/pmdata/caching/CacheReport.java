@@ -62,7 +62,7 @@ public class CacheReport {
 	}
 	private static class CacheInfo {
 		PersistentCache<?> cache;
-		CacheThread<?> thread;
+		CacheWorker<?> worker;
 		/*
 		 * Stringified cache ID.
 		 */
@@ -88,11 +88,10 @@ public class CacheReport {
 				if (!hashed.containsKey(cache)) {
 					var info = new CacheInfo();
 					info.cache = cache;
+					info.worker = CacheWorker.of(cache);
 					/*
 					 * Make sure the input we expand is the one recorded in CacheInfo.
-					 */
-					info.thread = CacheThread.of(cache);
-					/*
+					 * 
 					 * Do not propagate blocking from CacheInput. It could be blocking for a long time or forever.
 					 */
 					try (var nonblocking = ReactiveScope.nonblocking()) {
@@ -152,9 +151,9 @@ public class CacheReport {
 		if (exception != null)
 			status = empty ? CacheStatus.EMPTY : CacheStatus.FAILED;
 		for (var entry : caches.sorted) {
-			entry.progress = entry.thread.progress();
+			entry.progress = entry.worker.progress();
 			if (entry.progress != null) {
-				if (entry.thread.started() == null)
+				if (entry.worker.started() == null)
 					entry.status = CacheStatus.QUEUED;
 				else
 					entry.status = CacheStatus.RUNNING;
@@ -215,7 +214,7 @@ public class CacheReport {
 								var action = cancellable ? "Cancel" : status == CacheStatus.EMPTY ? "Populate" : "Refresh";
 								table.add("Action", fragment.nest("summary", key.toString())
 									.run(() -> new LinkButton(action)
-										.handle(() -> group.stream().map(g -> g.thread).forEach(cancellable ? CacheThread::cancel : CacheThread::schedule))
+										.handle(() -> group.stream().map(g -> g.worker).forEach(cancellable ? CacheWorker::cancel : CacheWorker::schedule))
 										.render())
 									.content());
 								table.add("Count", group.size());
@@ -249,7 +248,7 @@ public class CacheReport {
 									.content(new DomFragment()
 										.add(String.format("Refreshing %s... ", entry.name))
 										.add(new LinkButton("Cancel")
-											.handle(entry.thread::cancel)
+											.handle(entry.worker::cancel)
 											.html())
 										.add(Html.br())
 										.add(entry.progress.format()))
@@ -273,7 +272,7 @@ public class CacheReport {
 								var action = cancellable ? "Cancel" : status == CacheStatus.EMPTY ? "Populate" : "Refresh";
 								table.add("Action", fragment.nest("list", entry.name)
 									.run(() -> new LinkButton(action)
-										.handle(cancellable ? entry.thread::cancel : entry.thread::schedule)
+										.handle(cancellable ? entry.worker::cancel : entry.worker::schedule)
 										.render())
 									.content());
 								if (entry.snapshot != null) {
@@ -322,7 +321,7 @@ public class CacheReport {
 										.render();
 									StaticContent.show("Length of the longest dependent chain", details.depth);
 									StaticContent.show("Input hash", details.input.result() != null ? details.input.result().hash() : "(unavailable)");
-									var started = details.thread.started();
+									var started = details.worker.started();
 									if (started != null)
 										StaticContent.show("Refresh started", started);
 									if (details.progress != null)

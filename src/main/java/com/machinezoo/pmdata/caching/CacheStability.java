@@ -24,11 +24,11 @@ class CacheStability {
 		 */
 		if (snapshot != null && policy.period() != null && ReactiveInstant.now().isAfter(snapshot.refreshed().plus(policy.period())))
 			return false;
-		var thread = CacheThread.of(cache);
+		var worker = CacheWorker.of(cache);
 		/*
 		 * Currently refreshing cache.
 		 */
-		if (thread.progress() != null)
+		if (worker.progress() != null)
 			return false;
 		ReactiveValue<CacheInput> input;
 		/*

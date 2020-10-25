@@ -30,11 +30,11 @@ class CacheTrigger extends ReactiveThread {
 	}
 	@Override
 	protected void run() {
-		var thread = CacheThread.of(cache);
+		var worker = CacheWorker.of(cache);
 		/*
 		 * Refresh already in progress.
 		 */
-		if (thread.progress() != null)
+		if (worker.progress() != null)
 			return;
 		/*
 		 * This may throw. That's okay. We don't want to refresh the cache if its linker is failing.
@@ -94,6 +94,6 @@ class CacheTrigger extends ReactiveThread {
 		/*
 		 * All conditions have been met. Start refresh.
 		 */
-		thread.schedule();
+		worker.schedule();
 	}
 }
