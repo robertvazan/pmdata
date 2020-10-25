@@ -1,30 +1,28 @@
 // Part of PMData: https://pmdata.machinezoo.com
 package com.machinezoo.pmdata.caching;
 
-import java.util.concurrent.*;
 import com.machinezoo.hookless.*;
 import com.machinezoo.hookless.time.*;
-import com.machinezoo.hookless.util.*;
 import one.util.streamex.*;
 
 /*
  * Recursive cache stability indicator.
  */
 class CacheStability {
-	private static boolean evaluate(PersistentCache<?> cache) {
-		var snapshot = CacheSnapshot.of(cache);
+	static boolean evaluate(CacheOwner<?> owner) {
+		var snapshot = owner.snapshot.get();
 		/*
 		 * Empty, failing, or cancelled cache. Mark the cache as unstable even if there's an older value available.
 		 */
 		if (snapshot == null || snapshot.hash() == null || snapshot.exception() != null || snapshot.cancelled())
 			return false;
-		var policy = cache.policy();
+		var policy = owner.policy;
 		/*
 		 * Expired cache.
 		 */
 		if (snapshot != null && policy.period() != null && ReactiveInstant.now().isAfter(snapshot.refreshed().plus(policy.period())))
 			return false;
-		var worker = CacheWorker.of(cache);
+		var worker = owner.worker;
 		/*
 		 * Currently refreshing cache.
 		 */
@@ -36,7 +34,7 @@ class CacheStability {
 		 * Just fall back to unstable status when input is not available.
 		 */
 		try (var nonblocking = ReactiveScope.nonblocking()) {
-			input = ReactiveValue.capture(() -> CacheInput.of(cache));
+			input = ReactiveValue.capture(() -> owner.input.get());
 		}
 		/*
 		 * Failing or blocking linker.
@@ -51,22 +49,8 @@ class CacheStability {
 		/*
 		 * Unstable children.
 		 */
-		if (input.result() != null && StreamEx.of(input.result().snapshots().keySet()).anyMatch(c -> !CacheStability.of(c)))
+		if (input.result() != null && StreamEx.of(input.result().snapshots().keySet()).anyMatch(c -> !CacheOwner.of(c).stability.get()))
 			return false;
 		return true;
-	}
-	private static final ConcurrentMap<PersistentCache<?>, ReactiveWorker<Boolean>> all = new ConcurrentHashMap<>();
-	static boolean of(PersistentCache<?> cache) {
-		var worker = all.computeIfAbsent(cache, key -> OwnerTrace
-			.of(new ReactiveWorker<Boolean>()
-				.supplier(() -> evaluate(cache))
-				/*
-				 * Do not ever block, not even initially. Simply report the cache as unstable.
-				 */
-				.initial(new ReactiveValue<>(false, false)))
-			.parent(CacheStability.class)
-			.tag("cache", cache)
-			.target());
-		return worker.get();
 	}
 }

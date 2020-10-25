@@ -1,34 +1,23 @@
 // Part of PMData: https://pmdata.machinezoo.com
 package com.machinezoo.pmdata.caching;
 
-import java.util.concurrent.*;
 import com.machinezoo.hookless.*;
 import com.machinezoo.hookless.time.*;
+import com.machinezoo.hookless.util.*;
 import one.util.streamex.*;
 
 /*
  * Automatic refresh scheduling. There's one thread per cache except for manual caches.
  */
 class CacheThread extends ReactiveThread {
-	private final PersistentCache<?> cache;
-	private CacheThread(PersistentCache<?> cache) {
-		this.cache = cache;
-	}
-	private static final ConcurrentMap<PersistentCache<?>, CacheThread> all = new ConcurrentHashMap<>();
-	/*
-	 * The thread has no way to start itself automatically. It needs to be hinted that some cache is in use.
-	 * This method is safe to call multiple times.
-	 */
-	static void start(PersistentCache<?> cache) {
-		/*
-		 * Do not even create thread for caches with manual refresh.
-		 */
-		if (cache.policy().mode() != CacheRefreshMode.MANUAL)
-			all.computeIfAbsent(cache, CacheThread::new).start();
+	private final CacheOwner<?> owner;
+	CacheThread(CacheOwner<?> owner) {
+		this.owner = owner;
+		OwnerTrace.of(this).parent(owner);
 	}
 	@Override
 	protected void run() {
-		var worker = CacheWorker.of(cache);
+		var worker = owner.worker;
 		/*
 		 * Refresh already in progress.
 		 */
@@ -37,13 +26,13 @@ class CacheThread extends ReactiveThread {
 		/*
 		 * This may throw. That's okay. We don't want to refresh the cache if its linker is failing.
 		 */
-		var input = CacheInput.of(cache);
+		var input = owner.input.get();
 		/*
 		 * Blocking linker.
 		 */
 		if (CurrentReactiveScope.blocked())
 			return;
-		var snapshot = CacheSnapshot.of(cache);
+		var snapshot = owner.snapshot.get();
 		/*
 		 * Last refresh failed.
 		 */
@@ -57,7 +46,7 @@ class CacheThread extends ReactiveThread {
 		/*
 		 * Unstable dependency.
 		 */
-		if (StreamEx.of(input.snapshots().keySet()).anyMatch(c -> !CacheStability.of(c)))
+		if (StreamEx.of(input.snapshots().keySet()).anyMatch(c -> !CacheOwner.of(c).stability.get()))
 			return;
 		boolean dirty = false;
 		/*
@@ -65,7 +54,7 @@ class CacheThread extends ReactiveThread {
 		 */
 		if (snapshot == null)
 			dirty = true;
-		var policy = cache.policy();
+		var policy = owner.policy;
 		if (policy.mode() == CacheRefreshMode.AUTOMATIC && snapshot != null) {
 			/*
 			 * Stale cache.

@@ -9,14 +9,12 @@ import java.util.concurrent.*;
 import org.apache.commons.lang3.exception.*;
 import org.slf4j.*;
 import com.google.gson.*;
-import com.machinezoo.hookless.*;
-import com.machinezoo.hookless.util.*;
 
 public class CacheSnapshot<T extends CacheFile> {
 	private static final Logger logger = LoggerFactory.getLogger(CacheSnapshot.class);
-	private final PersistentCache<T> cache;
+	private final CacheOwner<T> owner;
 	public PersistentCache<T> cache() {
-		return cache;
+		return owner.cache;
 	}
 	private T data;
 	public T data() {
@@ -82,8 +80,8 @@ public class CacheSnapshot<T extends CacheFile> {
 	public Duration cost() {
 		return cost;
 	}
-	private CacheSnapshot(PersistentCache<T> cache) {
-		this.cache = cache;
+	private CacheSnapshot(CacheOwner<T> owner) {
+		this.owner = owner;
 	}
 	private static class Saved {
 		/*
@@ -101,14 +99,14 @@ public class CacheSnapshot<T extends CacheFile> {
 		long refreshed;
 		long cost;
 	}
-	private static <T extends CacheFile> CacheSnapshot<T> load(PersistentCache<T> cache) {
-		var directory = CacheFiles.directory(cache);
+	static <T extends CacheFile> CacheSnapshot<T> load(CacheOwner<T> owner) {
+		var directory = CacheFiles.directory(owner.cache);
 		var json = directory.resolve("cache.json");
 		if (!Files.isRegularFile(json))
 			return null;
 		try {
 			var saved = new Gson().fromJson(Files.readString(json), Saved.class);
-			var snapshot = new CacheSnapshot<T>(cache);
+			var snapshot = new CacheSnapshot<T>(owner);
 			snapshot.exception = saved.exception;
 			snapshot.cancelled = saved.cancelled;
 			Objects.requireNonNull(saved.input);
@@ -123,7 +121,7 @@ public class CacheSnapshot<T extends CacheFile> {
 			snapshot.refreshed = Instant.ofEpochMilli(saved.refreshed);
 			snapshot.cost = Duration.ofMillis(saved.cost);
 			if (saved.path != null)
-				snapshot.data = cache.format().load(directory.resolve(Paths.get(saved.path)));
+				snapshot.data = owner.cache.format().load(directory.resolve(Paths.get(saved.path)));
 			try (var listing = Files.list(directory)) {
 				for (var junk : listing.collect(toList())) {
 					if (!junk.equals(json) && (snapshot.data == null || !junk.equals(snapshot.data.path()))) {
@@ -141,36 +139,15 @@ public class CacheSnapshot<T extends CacheFile> {
 			return null;
 		}
 	}
-	private static final ConcurrentMap<PersistentCache<?>, ReactiveVariable<?>> all = new ConcurrentHashMap<>();
-	@SuppressWarnings("unchecked")
-	private static <T extends CacheFile> ReactiveVariable<CacheSnapshot<T>> variable(PersistentCache<T> cache) {
-		return (ReactiveVariable<CacheSnapshot<T>>)all.computeIfAbsent(cache, key -> {
-			var snapshot = load(cache);
-			var variable = OwnerTrace
-				.of(new ReactiveVariable<>(snapshot))
-				.parent(CacheSnapshot.class)
-				.tag("cache", cache)
-				.target();
-			/*
-			 * Snapshot access implies the application is interested in automatic cache refresh.
-			 * Hinting the cache thread here is cheap, because this code runs once.
-			 * 
-			 * The cache thread may immediately start running in another thread,
-			 * which is safe, because the ConcurrentMap will wait for this supplier to finish.
-			 */
-			CacheThread.start(cache);
-			return variable;
-		});
-	}
 	public static <T extends CacheFile> CacheSnapshot<T> of(PersistentCache<T> cache) {
-		return variable(cache).get();
+		return CacheOwner.of(cache).snapshot.get();
 	}
 	private void save() {
-		var directory = CacheFiles.directory(cache);
+		var directory = CacheFiles.directory(owner.cache);
 		var path = directory.resolve("cache.json");
 		try {
 			var saved = new Saved();
-			saved.id = cache.toString();
+			saved.id = owner.cache.toString();
 			saved.path = data != null ? data.path().toString() : null;
 			saved.exception = exception;
 			saved.cancelled = cancelled;
@@ -190,12 +167,12 @@ public class CacheSnapshot<T extends CacheFile> {
 			logger.error("Unable to save cache metadata in {}.", path, ex);
 		}
 	}
-	static <T extends CacheFile> void update(PersistentCache<T> cache, T data, CacheInput input, Instant started) {
+	static <T extends CacheFile> void update(CacheOwner<T> owner, T data, CacheInput input, Instant started) {
 		Objects.requireNonNull(data);
-		var variable = variable(cache);
+		var variable = owner.snapshot;
 		var previous = variable.get();
 		data.commit();
-		var next = new CacheSnapshot<T>(cache);
+		var next = new CacheSnapshot<T>(owner);
 		next.data = data;
 		next.input = input.hash();
 		next.hash = CacheFiles.hash(data.path());
@@ -210,11 +187,11 @@ public class CacheSnapshot<T extends CacheFile> {
 		 */
 		next.save();
 	}
-	static <T extends CacheFile> void update(PersistentCache<T> cache, Throwable exception, CacheInput input, Instant started) {
+	static <T extends CacheFile> void update(CacheOwner<T> owner, Throwable exception, CacheInput input, Instant started) {
 		var cancelled = ExceptionUtils.getThrowableList(exception).stream().anyMatch(x -> x instanceof CancellationException);
-		var variable = variable(cache);
+		var variable = owner.snapshot;
 		var previous = variable.get();
-		var next = new CacheSnapshot<T>(cache);
+		var next = new CacheSnapshot<T>(owner);
 		if (!cancelled)
 			next.exception = new CachedException(exception).getFormattedCause();
 		else if (previous != null)

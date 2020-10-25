@@ -3,12 +3,10 @@ package com.machinezoo.pmdata.caching;
 
 import java.nio.charset.*;
 import java.util.*;
-import java.util.concurrent.*;
 import java.util.function.*;
 import org.slf4j.*;
 import com.google.common.hash.*;
 import com.machinezoo.hookless.*;
-import com.machinezoo.hookless.util.*;
 import com.machinezoo.noexception.*;
 import one.util.streamex.*;
 
@@ -155,11 +153,11 @@ public class CacheInput {
 			frozen = true;
 		}
 	}
-	private static CacheInput link(PersistentCache<?> cache) {
+	static CacheInput link(CacheOwner<?> owner) {
 		var input = new CacheInput();
 		try (var recording = input.record()) {
 			try {
-				cache.link();
+				owner.cache.link();
 				input.freeze();
 				/*
 				 * Verify that input hash can be calculated. This will call toString() on all the parameters.
@@ -183,21 +181,7 @@ public class CacheInput {
 		}
 		return input;
 	}
-	private static final ConcurrentMap<PersistentCache<?>, ReactiveWorker<CacheInput>> caches = new ConcurrentHashMap<>();
-	/*
-	 * CacheInput as captured by this method has several flaws:
-	 * - It can be out of date.
-	 * - It could reactively block.
-	 * - Exception might be thrown instead of returning input description.
-	 * 
-	 * These are all legitimate results. Callers have to deal with them.
-	 */
 	public static CacheInput of(PersistentCache<?> cache) {
-		var worker = caches.computeIfAbsent(cache, key -> OwnerTrace
-			.of(new ReactiveWorker<CacheInput>(() -> link(cache)))
-			.parent(CacheInput.class)
-			.tag("cache", cache)
-			.target());
-		return worker.get();
+		return CacheOwner.of(cache).input.get();
 	}
 }

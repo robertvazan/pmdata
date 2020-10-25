@@ -12,18 +12,16 @@ import com.machinezoo.pmsite.utils.*;
 
 public class CacheWorker<T extends CacheFile> {
 	private static final Logger logger = LoggerFactory.getLogger(CacheWorker.class);
-	private final PersistentCache<T> cache;
-	public PersistentCache<T> cache() {
-		return cache;
+	private final CacheOwner<T> owner;
+	CacheWorker(CacheOwner<T> owner) {
+		this.owner = owner;
+		OwnerTrace.of(this).parent(owner);
 	}
-	private CacheWorker(PersistentCache<T> cache) {
-		this.cache = cache;
-		OwnerTrace.of(this).tag("cache", cache);
-	}
-	private static final ConcurrentMap<PersistentCache<?>, CacheWorker<?>> all = new ConcurrentHashMap<>();
-	@SuppressWarnings("unchecked")
 	public static <T extends CacheFile> CacheWorker<T> of(PersistentCache<T> cache) {
-		return (CacheWorker<T>)all.computeIfAbsent(cache, key -> new CacheWorker<>(cache));
+		return CacheOwner.of(cache).worker;
+	}
+	public PersistentCache<T> cache() {
+		return owner.cache;
 	}
 	private final ReactiveVariable<Progress.Goal> progress = OwnerTrace
 		.of(new ReactiveVariable<Progress.Goal>())
@@ -64,7 +62,7 @@ public class CacheWorker<T extends CacheFile> {
 			CacheInput input = null;
 			try {
 				goal.stage("Exclusivity");
-				var lock = cache.policy().exclusive() ? exclusivity.writeLock() : exclusivity.readLock();
+				var lock = owner.policy.exclusive() ? exclusivity.writeLock() : exclusivity.readLock();
 				lock.lock();
 				try {
 					logger.info("Refreshing {}.", this);
@@ -85,7 +83,7 @@ public class CacheWorker<T extends CacheFile> {
 							 * Create reactive scope, so that we can check for reactive blocking and so that reactive freezing works.
 							 */
 							var reactiveScope = new ReactiveScope().enter();
-							var outputScope = CacheFiles.redirect(CacheFiles.directory(cache))) {
+							var outputScope = CacheFiles.redirect(CacheFiles.directory(owner.cache))) {
 						/*
 						 * We are delaying linker query as much as possible,
 						 * so that it incorporates results of cache refreshes scheduled before this one.
@@ -95,7 +93,7 @@ public class CacheWorker<T extends CacheFile> {
 						 * We will not block this thread (via ReactiveFuture.supplyReactive()) until linker output is non-blocking,
 						 * because that could cause very long blocking or even deadlocks.
 						 */
-						input = CacheInput.of(cache);
+						input = owner.input.get();
 						/*
 						 * If the linker throws, just fail the whole refresh.
 						 * If it reactively blocks, consider this refresh to have started prematurely and fail it immediately too.
@@ -109,7 +107,7 @@ public class CacheWorker<T extends CacheFile> {
 						 * It is nevertheless reasonable for linker-declared dependencies to be a superset of actually used dependencies.
 						 */
 						try (var inputScope = input.record()) {
-							data = cache.supply();
+							data = owner.cache.supply();
 						}
 						/*
 						 * Any reactive blocking means the data is not up to date even if input hash matches.
@@ -117,7 +115,7 @@ public class CacheWorker<T extends CacheFile> {
 						if (CurrentReactiveScope.blocked())
 							throw new ReactiveBlockingException();
 					}
-					CacheSnapshot.update(cache, data, input, started.get());
+					CacheSnapshot.update(owner, data, input, started.get());
 					logger.info("Refreshed {}.", this);
 				} finally {
 					lock.unlock();
@@ -141,7 +139,7 @@ public class CacheWorker<T extends CacheFile> {
 					 * This code must be synchronized, so that no concurrent refresh is created in between the condition and actual snapshot write.
 					 */
 					if (progress.get() == goal)
-						CacheSnapshot.update(cache, ex, input, started.get());
+						CacheSnapshot.update(owner, ex, input, started.get());
 				}
 			}
 		} finally {
@@ -178,6 +176,6 @@ public class CacheWorker<T extends CacheFile> {
 	}
 	@Override
 	public synchronized String toString() {
-		return cache.toString();
+		return owner.toString();
 	}
 }

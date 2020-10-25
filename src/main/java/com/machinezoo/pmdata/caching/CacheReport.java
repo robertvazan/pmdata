@@ -88,7 +88,8 @@ public class CacheReport {
 				if (!hashed.containsKey(cache)) {
 					var info = new CacheInfo();
 					info.cache = cache;
-					info.worker = CacheWorker.of(cache);
+					var owner = CacheOwner.of(cache);
+					info.worker = owner.worker;
 					/*
 					 * Make sure the input we expand is the one recorded in CacheInfo.
 					 * 
@@ -99,7 +100,7 @@ public class CacheReport {
 						 * Do not propagate exception from CacheInput. It could be failing permanently.
 						 * It's better to capture the exception and report it later.
 						 */
-						info.input = ReactiveValue.capture(() -> CacheInput.of(cache));
+						info.input = ReactiveValue.capture(() -> owner.input.get());
 					}
 					if (info.input.result() != null)
 						collect(info.input.result());
