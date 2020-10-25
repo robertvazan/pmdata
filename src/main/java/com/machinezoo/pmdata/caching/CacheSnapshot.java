@@ -146,11 +146,20 @@ public class CacheSnapshot<T extends CacheFile> {
 	private static <T extends CacheFile> ReactiveVariable<CacheSnapshot<T>> variable(PersistentCache<T> cache) {
 		return (ReactiveVariable<CacheSnapshot<T>>)all.computeIfAbsent(cache, key -> {
 			var snapshot = load(cache);
-			return OwnerTrace
-				.of(new ReactiveVariable<CacheSnapshot<T>>(snapshot))
+			var variable = OwnerTrace
+				.of(new ReactiveVariable<>(snapshot))
 				.parent(CacheSnapshot.class)
 				.tag("cache", cache)
 				.target();
+			/*
+			 * Snapshot access implies the application is interested in automatic cache refresh.
+			 * Hinting the cache trigger here is cheap, because this code runs once.
+			 * 
+			 * The cache trigger may immediately start running in another thread,
+			 * which is safe, because the ConcurrentMap will wait for this supplier to finish.
+			 */
+			CacheTrigger.start(cache);
+			return variable;
 		});
 	}
 	public static <T extends CacheFile> CacheSnapshot<T> of(PersistentCache<T> cache) {
@@ -181,7 +190,7 @@ public class CacheSnapshot<T extends CacheFile> {
 			logger.error("Unable to save cache metadata in {}.", path, ex);
 		}
 	}
-	public static <T extends CacheFile> void update(PersistentCache<T> cache, T data, CacheInput input, Instant started) {
+	static <T extends CacheFile> void update(PersistentCache<T> cache, T data, CacheInput input, Instant started) {
 		Objects.requireNonNull(data);
 		var variable = variable(cache);
 		var previous = variable.get();
@@ -201,7 +210,7 @@ public class CacheSnapshot<T extends CacheFile> {
 		 */
 		next.save();
 	}
-	public static <T extends CacheFile> void update(PersistentCache<T> cache, Throwable exception, CacheInput input, Instant started) {
+	static <T extends CacheFile> void update(PersistentCache<T> cache, Throwable exception, CacheInput input, Instant started) {
 		var cancelled = ExceptionUtils.getThrowableList(exception).stream().anyMatch(x -> x instanceof CancellationException);
 		var variable = variable(cache);
 		var previous = variable.get();

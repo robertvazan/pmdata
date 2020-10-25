@@ -75,9 +75,6 @@ public class CacheReport {
 		 */
 		int depth;
 		CacheStatus status;
-		Instant dependencyActivity;
-		Instant latestActivity;
-		boolean dependenciesReady;
 		Progress.Goal progress;
 	}
 	private static class CacheCollection {
@@ -154,7 +151,6 @@ public class CacheReport {
 		var empty = exception != null && ExceptionUtils.getThrowableList(exception).stream().anyMatch(x -> x instanceof EmptyCacheException);
 		if (exception != null)
 			status = empty ? CacheStatus.EMPTY : CacheStatus.FAILED;
-		int concurrency = Runtime.getRuntime().availableProcessors();
 		for (var entry : caches.sorted) {
 			entry.progress = entry.thread.progress();
 			if (entry.progress != null) {
@@ -180,35 +176,6 @@ public class CacheReport {
 				entry.status = CacheStatus.READY;
 			if (entry.status.ordinal() > status.ordinal())
 				status = entry.status;
-			entry.dependenciesReady = entry.children.stream().allMatch(e -> e.status == CacheStatus.READY && e.dependenciesReady);
-			entry.dependencyActivity = entry.children.stream().map(e -> e.latestActivity).filter(t -> t != null).max(Comparator.naturalOrder()).orElse(null);
-			if (entry.snapshot == null)
-				entry.latestActivity = entry.dependencyActivity;
-			else
-				entry.latestActivity = Stream.of(entry.dependencyActivity, entry.snapshot.refreshed()).filter(t -> t != null).max(Comparator.naturalOrder()).orElse(null);
-			boolean refresh = false;
-			if (entry.status == CacheStatus.EMPTY && entry.cache.policy().mode() != CacheRefreshMode.MANUAL)
-				refresh = true;
-			if (entry.status == CacheStatus.STALE && entry.cache.policy().mode() == CacheRefreshMode.AUTOMATIC)
-				refresh = true;
-			if (entry.status == CacheStatus.EXPIRED)
-				refresh = true;
-			if (!entry.dependenciesReady)
-				refresh = false;
-			/*
-			 * Avoid repeated refresh. This essentially protects against repeated refresh if there's inconsistency between linker and supplier.
-			 */
-			if (entry.status == CacheStatus.STALE && entry.dependencyActivity != null
-				&& entry.dependencyActivity.isBefore(entry.snapshot.refreshed().minus(entry.snapshot.cost()))) {
-				refresh = false;
-			}
-			if (concurrency <= 0)
-				refresh = false;
-			if (refresh) {
-				entry.thread.schedule();
-				--concurrency;
-			} else if (entry.status == CacheStatus.RUNNING || entry.status == CacheStatus.QUEUED)
-				--concurrency;
 		}
 		if (!expandable) {
 			/*
@@ -355,10 +322,6 @@ public class CacheReport {
 										.render();
 									StaticContent.show("Length of the longest dependent chain", details.depth);
 									StaticContent.show("Input hash", details.input.result() != null ? details.input.result().hash() : "(unavailable)");
-									if (details.dependencyActivity != null)
-										StaticContent.show("Latest dependency activity", details.dependencyActivity);
-									if (details.latestActivity != null)
-										StaticContent.show("Latest recursive activity", details.latestActivity);
 									var started = details.thread.started();
 									if (started != null)
 										StaticContent.show("Refresh started", started);
