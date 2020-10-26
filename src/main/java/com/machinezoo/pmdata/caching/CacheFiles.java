@@ -47,7 +47,8 @@ public class CacheFiles {
 						remove(item);
 				}
 			}
-			Files.delete(path);
+			if (Files.exists(path))
+				Files.delete(path);
 		});
 	}
 	private static final Pattern filenameRe = Pattern.compile("^[a-zA-Z0-9._-]+");
@@ -66,12 +67,12 @@ public class CacheFiles {
 		}
 		return path.resolve(hashId(name));
 	}
-	public static final Path DEFAULT_DESTINATION = SiteFiles.cacheOf(CacheFiles.class.getSimpleName());
+	public static final Path DEFAULT_DESTINATION = SiteFiles.cacheOf(CacheFiles.class.getSimpleName()).resolve("default");
 	static {
 		/*
 		 * Cache files in default directory are transient. Delete them when app restarts.
 		 */
-		remove(DEFAULT_DESTINATION);
+		Exceptions.log().run(() -> remove(DEFAULT_DESTINATION));
 	}
 	private static final ThreadLocal<Path> current = new ThreadLocal<>();
 	public static Path destination() {

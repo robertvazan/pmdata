@@ -5,6 +5,7 @@ import java.lang.reflect.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.*;
+import org.apache.commons.lang3.exception.*;
 import org.slf4j.*;
 import com.google.common.cache.*;
 import com.machinezoo.hookless.*;
@@ -36,7 +37,8 @@ public class DataWidgets {
 					 */
 					runnable.run();
 				} catch (Throwable ex) {
-					logger.error("DataWidget threw an exception.", ex);
+					if (!ExceptionUtils.getThrowableList(ex).stream().anyMatch(x -> x instanceof EmptyCacheException))
+						logger.error("DataWidget threw an exception.", ex);
 					partial.exception = ex;
 				}
 			}
