@@ -429,4 +429,7 @@ main > article tr:nth-last-child(1) > td.maybe, main > article tr:nth-last-child
 	.sidebar-container > * > *:first-child, .sidebar-container > * > *:first-child > *:first-child {
 		margin-top: 0;
 	}
+	.sidebar-container > * > *:last-child, .sidebar-container > * > *:last-child > *:last-child {
+		margin-bottom: 0;
+	}
 }
