@@ -352,7 +352,7 @@ main > article tr:nth-last-child(1) > td.maybe, main > article tr:nth-last-child
 	display: flex;
 	flex-wrap: wrap;
 	list-style: none;
-	padding: 0;
+	padding: 0 10px;
 	max-width: 804px;
 	margin: -2px auto;
 }
@@ -409,4 +409,24 @@ main > article tr:nth-last-child(1) > td.maybe, main > article tr:nth-last-child
 }
 .button-row button:hover {
 	background: #abf;
+}
+@media (min-width: 1600px) {
+	.sidebar-container {
+		display: flex;
+		justify-content: center;
+		margin: 20px 0;
+	}
+	.sidebar-main {
+		width: 800px;
+	}
+	.sidebar-left, .sidebar-right {
+		width: calc((100% - 800px) / 2);
+		max-width: 800px;
+	}
+	.sidebar-right {
+		order: 2;
+	}
+	.sidebar-container > * > *:first-child, .sidebar-container > * > *:first-child > *:first-child {
+		margin-top: 0;
+	}
 }

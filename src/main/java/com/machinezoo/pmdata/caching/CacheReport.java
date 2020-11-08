@@ -310,9 +310,9 @@ public class CacheReport {
 										table.add("Cache", entry.name).left();
 									}
 								}
-							}
-							if (details != null) {
+							} else if (details != null)
 								StaticContent.show("Selected cache", details.name);
+							if (details != null) {
 								if (details.input.blocking())
 									Notice.warn("Cache linker is blocking. Some information might not be available.");
 								if (dview.is("Cache")) {
