@@ -212,7 +212,7 @@ public class CacheReport {
 								table.add("Status", key).tone(key.tone);
 								var group = groups.get(key);
 								boolean cancellable = key == CacheStatus.QUEUED || key == CacheStatus.RUNNING;
-								var action = cancellable ? "Cancel" : status == CacheStatus.EMPTY ? "Populate" : "Refresh";
+								var action = cancellable ? "Cancel" : key == CacheStatus.EMPTY ? "Populate" : "Refresh";
 								table.add("Action", fragment.nest("summary", key.toString())
 									.run(() -> new LinkButton(action)
 										.handle(() -> group.stream().map(g -> g.worker).forEach(cancellable ? CacheWorker::cancel : CacheWorker::schedule))
@@ -270,7 +270,7 @@ public class CacheReport {
 							for (var entry : caches.sorted) {
 								table.add("Status", entry.status).tone(entry.status.tone);
 								boolean cancellable = entry.status == CacheStatus.QUEUED || entry.status == CacheStatus.RUNNING;
-								var action = cancellable ? "Cancel" : status == CacheStatus.EMPTY ? "Populate" : "Refresh";
+								var action = cancellable ? "Cancel" : entry.status == CacheStatus.EMPTY ? "Populate" : "Refresh";
 								table.add("Action", fragment.nest("list", entry.name)
 									.run(() -> new LinkButton(action)
 										.handle(cancellable ? entry.worker::cancel : entry.worker::schedule)
