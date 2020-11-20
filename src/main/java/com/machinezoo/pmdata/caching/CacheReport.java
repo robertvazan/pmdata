@@ -39,6 +39,8 @@ public class CacheReport {
 	}
 	private static enum CacheStatus {
 		READY(Tone.OK, "Ready", "Content depends on persistent cache."),
+		WAITING(Tone.WARNING, "Waiting", "Persistent cache is waiting on its dependencies."),
+		CANCELLED(Tone.WARNING, "Cancelled", "Cache refresh has been cancelled."),
 		EXPIRED(Tone.WARNING, "Expired", "Content depends on expired cache."),
 		STALE(Tone.WARNING, "Stale", "Content depends on stale cache."),
 		EMPTY(Tone.WARNING, "Empty", "Content depends on uninitialized cache."),
@@ -46,7 +48,7 @@ public class CacheReport {
 		LINKING(Tone.PROGRESS, "Linking", "Cache graph is being constructed."),
 		QUEUED(Tone.PROGRESS, "Queued", "Cache refresh is pending."),
 		RUNNING(Tone.PROGRESS, "Refreshing", "Cache refresh is in progress."),
-		CANCELLED(Tone.WARNING, "Cancelled", "Cache refresh has been cancelled.");
+		JUST_CANCELLED(Tone.WARNING, "Cancelled", "Cache refresh has been cancelled.");
 		final Tone tone;
 		final String label;
 		final String message;
@@ -74,6 +76,7 @@ public class CacheReport {
 		 * Maximum depth.
 		 */
 		int depth;
+		boolean stable;
 		CacheStatus status;
 		Progress progress;
 	}
@@ -117,6 +120,7 @@ public class CacheReport {
 								.toList();
 						} else
 							info.children = Collections.emptyList();
+						info.stable = owner.stability.get();
 						hashed.put(cache, info);
 						sorted.add(info);
 					}
@@ -163,7 +167,7 @@ public class CacheReport {
 			else if (entry.snapshot == null)
 				entry.status = CacheStatus.EMPTY;
 			else if (entry.snapshot.cancelled() && ReactiveDuration.between(entry.snapshot.refreshed(), ReactiveInstant.now()).compareTo(Duration.ofSeconds(3)) < 0)
-				entry.status = CacheStatus.CANCELLED;
+				entry.status = CacheStatus.JUST_CANCELLED;
 			else if (entry.input.exception() != null || entry.snapshot.exception() != null)
 				entry.status = CacheStatus.FAILED;
 			else if (entry.snapshot.hash() == null)
@@ -172,6 +176,13 @@ public class CacheReport {
 				entry.status = CacheStatus.STALE;
 			else if (entry.cache.policy().period() != null && ReactiveInstant.now().isAfter(entry.snapshot.refreshed().plus(entry.cache.policy().period())))
 				entry.status = CacheStatus.EXPIRED;
+			/*
+			 * Show cancellation flag permanently, because dependencies of cancelled caches will not refresh automatically.
+			 */
+			else if (entry.snapshot.cancelled())
+				entry.status = CacheStatus.CANCELLED;
+			else if (!entry.stable)
+				entry.status = CacheStatus.WAITING;
 			else
 				entry.status = CacheStatus.READY;
 			if (entry.status.ordinal() > status.ordinal())
