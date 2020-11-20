@@ -8,7 +8,6 @@ import org.apache.commons.lang3.exception.*;
 import org.slf4j.*;
 import com.machinezoo.hookless.*;
 import com.machinezoo.hookless.util.*;
-import com.machinezoo.pmsite.utils.*;
 
 public class CacheWorker<T extends CacheFile> {
 	private static final Logger logger = LoggerFactory.getLogger(CacheWorker.class);
@@ -46,16 +45,6 @@ public class CacheWorker<T extends CacheFile> {
 				goal.cancel();
 		}
 	}
-	/*
-	 * Separate executor, so that we don't hog SiteThread.bulk(), which is intended for somewhat lighter tasks.
-	 * Cache supplier can still internally parallelize and run small pieces of work on SiteThread.bulk() or elsewhere.
-	 * Maybe we should in the future expose special heavy thread pool for cache parallelization.
-	 */
-	private static final ExecutorService executor = new SiteThread()
-		.owner(CacheWorker.class)
-		.hardwareParallelism()
-		.lowestPriority()
-		.executor();
 	private static final ReadWriteLock exclusivity = new ReentrantReadWriteLock();
 	private void refresh(Progress progress) {
 		try {
@@ -174,7 +163,12 @@ public class CacheWorker<T extends CacheFile> {
 			progress.add(new Progress("Scheduling"));
 			this.progress.set(progress);
 			logger.info("Scheduling {}.", this);
-			executor.submit(() -> refresh(progress));
+			var refresh = new CacheRefresh(() -> refresh(progress));
+			refresh.exclusive = owner.policy.exclusive();
+			var snapshot = owner.snapshot.get();
+			if (snapshot != null)
+				refresh.cost = snapshot.cost();
+			CacheRefresh.executor.submit(refresh);
 		}
 	}
 	@Override
