@@ -48,7 +48,8 @@ public class CacheSnapshot<T extends CacheFile> {
 		return cancelled;
 	}
 	/*
-	 * Hash of the input as observed by cache's supplier.
+	 * Hash of the input as observed by the cache during the last refresh attempt whether successful or not.
+	 * Sometimes refresh attempt fails before input hash is known. In that case this field will be set to some fallback value.
 	 */
 	private String input;
 	public String input() {
@@ -198,18 +199,19 @@ public class CacheSnapshot<T extends CacheFile> {
 			next.exception = previous.exception;
 		next.cancelled = cancelled;
 		next.refreshed = Instant.now();
+		/*
+		 * CacheInput comes from linker, which checks that calling hash() is exception-free.
+		 * We never reuse input from previous snapshot, because then we wouldn't know
+		 * when to refresh failing or cancelled caches.
+		 */
+		next.input = input != null ? input.hash() : new CacheInput().hash();
 		if (previous != null) {
 			next.data = previous.data;
-			next.input = previous.input;
 			next.hash = previous.hash;
 			next.size = previous.size;
 			next.updated = previous.updated;
 			next.cost = previous.cost;
 		} else {
-			/*
-			 * CacheInput comes from linker, which checks that calling hash() is exception-free.
-			 */
-			next.input = input != null ? input.hash() : new CacheInput().hash();
 			if (started != null)
 				next.cost = Duration.between(started, next.refreshed);
 			else

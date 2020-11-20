@@ -34,16 +34,6 @@ class CacheThread extends ReactiveThread {
 			return;
 		var snapshot = owner.snapshot.get();
 		/*
-		 * Last refresh failed.
-		 */
-		if (snapshot != null && snapshot.exception() != null)
-			return;
-		/*
-		 * Last refresh was cancelled.
-		 */
-		if (snapshot != null && snapshot.cancelled())
-			return;
-		/*
 		 * Unstable dependency.
 		 */
 		if (StreamEx.of(input.snapshots().keySet()).anyMatch(c -> !CacheOwner.of(c).stability.get()))
@@ -59,11 +49,10 @@ class CacheThread extends ReactiveThread {
 			/*
 			 * Stale cache.
 			 * 
-			 * This could theoretically start looping refreshes
-			 * if the new snapshot for some reason does not have the updated input hash.
-			 * That can however only happen in case of exception or cancellation, which are both handled above.
-			 * Cache supplier cannot modify linker-generated input description,
-			 * so successful refresh will always write the latest input hash into the snapshot.
+			 * This will not cause looping of refreshes even if the cache is failed or cancelled,
+			 * because stored input hash reflects last refresh, successful or not,
+			 * instead of the input used to generate last valid cache content.
+			 * If there's an exception, it is stored along with an up-to-date hash, preventing further refreshes.
 			 */
 			if (!input.hash().equals(snapshot.input()))
 				dirty = true;
