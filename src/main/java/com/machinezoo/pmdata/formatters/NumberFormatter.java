@@ -16,7 +16,7 @@ public class NumberFormatter implements DoubleValueFormatter {
 						var format = NumberFormat.getInstance();
 						format.setMinimumFractionDigits(0);
 						format.setMaximumFractionDigits(2 - j);
-						return format.format(Math.pow(0.001, i + 1) * value) + " " + (i >= 0 ? BIG_PREFIXES[i] : "");
+						return format.format(Math.pow(0.001, i + 1) * value) + (i >= 0 ? " " + BIG_PREFIXES[i] : "");
 					}
 				}
 			}
