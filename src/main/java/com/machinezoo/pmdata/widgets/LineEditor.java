@@ -9,10 +9,15 @@ import com.machinezoo.stagean.*;
 
 @DraftApi
 public class LineEditor {
+	public LineEditor() {
+	}
 	private String title;
 	public LineEditor title(String title) {
 		this.title = title;
 		return this;
+	}
+	public LineEditor(String title) {
+		this.title = title;
 	}
 	private StringBinding binding;
 	public LineEditor binding(StringBinding binding) {

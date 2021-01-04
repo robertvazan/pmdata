@@ -37,7 +37,7 @@ public class DataWidgets {
 					 */
 					runnable.run();
 				} catch (Throwable ex) {
-					if (!ExceptionUtils.getThrowableList(ex).stream().anyMatch(x -> x instanceof EmptyCacheException))
+					if (!ExceptionUtils.getThrowableList(ex).stream().anyMatch(x -> x instanceof EmptyCacheException) && !CurrentReactiveScope.blocked())
 						logger.error("DataWidget threw an exception.", ex);
 					partial.exception = ex;
 				}
