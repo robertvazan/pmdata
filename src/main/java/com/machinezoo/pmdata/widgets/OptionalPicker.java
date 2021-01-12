@@ -71,7 +71,7 @@ public class OptionalPicker<T> {
 		return this;
 	}
 	public Optional<T> pick() {
-		if (fallback.isPresent() && !items.contains(fallback))
+		if (fallback.isPresent() && !items.contains(fallback.get()))
 			throw new IllegalStateException("Fallback value must be in the item list.");
 		Optional<T> current;
 		StringBinding sbinding;

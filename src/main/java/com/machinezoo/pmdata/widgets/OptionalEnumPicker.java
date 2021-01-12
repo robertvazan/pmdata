@@ -69,6 +69,11 @@ public class OptionalEnumPicker<T extends Enum<T>> {
 		this.title = title;
 		add(items);
 	}
+	@SafeVarargs
+	public OptionalEnumPicker(String title, T... items) {
+		this.title = title;
+		add(items);
+	}
 	private DataBinding<Optional<T>> binding;
 	public OptionalEnumPicker<T> binding(DataBinding<Optional<T>> binding) {
 		this.binding = binding;
