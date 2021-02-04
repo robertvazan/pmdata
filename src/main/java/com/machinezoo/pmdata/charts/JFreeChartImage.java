@@ -9,10 +9,10 @@ import com.machinezoo.noexception.*;
 import com.machinezoo.pmdata.widgets.*;
 
 public class JFreeChartImage {
-	private JFreeChart chart;
-	public JFreeChartImage chart(JFreeChart chart) {
+	private final JFreeChart chart;
+	public JFreeChartImage(JFreeChart chart) {
+		Objects.requireNonNull(chart);
 		this.chart = chart;
-		return this;
 	}
 	/*
 	 * The actual size (800x600) is not that important in SVG, because it is scalable,
@@ -29,7 +29,6 @@ public class JFreeChartImage {
 		return this;
 	}
 	public byte[] svg() {
-		Objects.requireNonNull(chart);
 		/*
 		 * The Rectangle parameter here determines how big the SVG shapes will be,
 		 * but it does not automatically generate width/height nor viewBox attributes.
