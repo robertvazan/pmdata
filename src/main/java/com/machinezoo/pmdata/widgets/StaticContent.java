@@ -63,7 +63,7 @@ public class StaticContent {
 			.render();
 	}
 	public CloseableScope define() {
-		var fragment = SiteFragment.forKey(SiteFragment.get().key());
+		var fragment = SiteFragment.get().isolate();
 		return fragment.open().andThen(() -> {
 			add(fragment.content());
 			render();

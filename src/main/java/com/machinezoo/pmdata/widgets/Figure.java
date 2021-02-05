@@ -56,7 +56,7 @@ public class Figure {
 		 * Do not nest new fragment. Content of figure should appear under the same fragment key as surrounding content.
 		 * We will just create new empty fragment for the same key, so that we can capture content in it.
 		 */
-		var fragment = SiteFragment.forKey(SiteFragment.get().key());
+		var fragment = SiteFragment.get().isolate();
 		return fragment.open().andThen(() -> {
 			add(fragment.content());
 			render();
