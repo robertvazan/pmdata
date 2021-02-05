@@ -3,7 +3,9 @@ package com.machinezoo.pmdata.widgets;
 
 import static java.util.stream.Collectors.*;
 import java.util.*;
+import java.util.function.*;
 import java.util.stream.*;
+import com.machinezoo.noexception.*;
 import com.machinezoo.pmdata.formatters.*;
 import com.machinezoo.pmsite.*;
 import com.machinezoo.pushmode.dom.*;
@@ -16,16 +18,9 @@ import one.util.streamex.*;
  * These tables are dumb. They have no built-in sorting, filtering, or pagination.
  * Making tables too smart prevents us from drawing attention to the particular view of the data we want to show.
  * Where multiple views are desirable, pickers can be used to introduce just the views that are useful.
- * 
- * Tables have closeable API for use in try-with-resources, so that we don't forget to render the constructed table.
- * Most other widgets don't need it, because their construction involves only a simple sequence of fluent method calls.
- * We could also render the table incrementally, but that's much more complicated to implement
- * and it might prevent us from adding features in the future.
- * 
- * There's no setter chaining to avoid spurious resource leak warnings as this class is AutoCloseable.
  */
 @DraftApi
-public class PlainTable implements AutoCloseable {
+public class PlainTable {
 	private final String caption;
 	public PlainTable(String caption) {
 		this.caption = caption;
@@ -45,9 +40,8 @@ public class PlainTable implements AutoCloseable {
 		CENTER, LEFT, RIGHT
 	}
 	/*
-	 * AutoCloseable with chained (this-returning) methods would trigger lots of resource leak warnings.
-	 * We will therefore force every add() call to be independent, i.e. add() calls will not return the Table.
-	 * We however want some sort of chaining for cell attributes, so we return Cell object instead that allows cell-local chaining.
+	 * Instead of allowing chaining of add() methods by returning the table,
+	 * it is better to have them return Cell objects for cell-local method chaining.
 	 */
 	public static class Cell {
 		private DomContent content;
@@ -85,8 +79,8 @@ public class PlainTable implements AutoCloseable {
 	 * Storing the Cell object makes the application code more verbose. We will instead provide access to the last cell as a convenience.
 	 * We could have also duplicated styling methods on Table class, but that's not necessary since most uses are unconditional.
 	 */
-	private PlainTable.Cell last;
-	public PlainTable.Cell last() {
+	private Cell last;
+	public Cell last() {
 		return last;
 	}
 	/*
@@ -164,8 +158,7 @@ public class PlainTable implements AutoCloseable {
 	public void fallback(String fallback) {
 		this.fallback = fallback;
 	}
-	@Override
-	public void close() {
+	public void render() {
 		if (rows == 0) {
 			if (fallback != null)
 				Notice.info(fallback);
@@ -215,5 +208,74 @@ public class PlainTable implements AutoCloseable {
 												.add(c.content))))))));
 			}
 		}
+	}
+	/*
+	 * Tables aren't really a piece of content. They are more of a layout for content that is in table cells.
+	 * It therefore makes sense to expose table via thread-local variable just like SiteFragment
+	 * and have a set of static methods that serve as a sort of limited set of table-embedded widgets.
+	 */
+	private static final ThreadLocal<PlainTable> current = new ThreadLocal<>();
+	public static Optional<PlainTable> current() {
+		return Optional.ofNullable(current.get());
+	}
+	public static PlainTable get() {
+		/*
+		 * Provide fallback instead of throwing, so that UI code can be executed without error in non-UI context.
+		 */
+		return current().orElseGet(PlainTable::new);
+	}
+	/*
+	 * Convenience class to make it easy to access the table from within try-with-resources.
+	 */
+	public static class Scope implements CloseableScope {
+		private final PlainTable table;
+		private final PlainTable outer;
+		private final boolean render;
+		Scope(PlainTable table, boolean render) {
+			outer = current.get();
+			current.set(table);
+			this.table = table;
+			this.render = render;
+		}
+		@Override
+		public void close() {
+			current.set(outer);
+			if (render)
+				table.render();
+		}
+		public Cell last() {
+			return table.last();
+		}
+		public Cell add(String column, DomContent content) {
+			return table.add(column, content);
+		}
+		public Cell add(String column, String text) {
+			return table.add(column, text);
+		}
+		public Cell add(String column, String format, Object... args) {
+			return table.add(column, format, args);
+		}
+		public Cell add(String column, Object data) {
+			return table.add(column, data);
+		}
+		public void fallback(String fallback) {
+			table.fallback(fallback);
+		}
+	}
+	public Scope open() {
+		return new Scope(this, false);
+	}
+	public void run(Runnable runnable) {
+		try (var scope = open()) {
+			runnable.run();
+		}
+	}
+	public <T> T get(Supplier<T> supplier) {
+		try (var scope = open()) {
+			return supplier.get();
+		}
+	}
+	public Scope define() {
+		return new Scope(this, true);
 	}
 }

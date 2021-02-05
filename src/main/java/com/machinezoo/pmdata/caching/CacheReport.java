@@ -217,7 +217,7 @@ public class CacheReport {
 			if (expanded) {
 				try (var view = new CasePicker("Cache view")) {
 					if (view.is("Summary")) {
-						try (var table = new PlainTable("Cache summary")) {
+						try (var table = new PlainTable("Cache summary").define()) {
 							var groups = StreamEx.of(caches.sorted).groupingBy(c -> c.status);
 							for (var key : StreamEx.of(groups.keySet()).sorted()) {
 								table.add("Status", key).tone(key.tone);
@@ -277,7 +277,7 @@ public class CacheReport {
 						}
 					}
 					if (view.is("Caches")) {
-						try (var table = new PlainTable("Caches")) {
+						try (var table = new PlainTable("Caches").define()) {
 							for (var entry : caches.sorted) {
 								table.add("Status", entry.status).tone(entry.status.tone);
 								boolean cancellable = entry.status == CacheStatus.QUEUED || entry.status == CacheStatus.RUNNING;
@@ -307,7 +307,7 @@ public class CacheReport {
 						var details = caches.sorted.stream().filter(c -> c.name.equals(detailsPref)).findFirst().orElse(null);
 						try (var dview = new CasePicker("Cache details")) {
 							if (dview.is("Pick")) {
-								try (var table = new PlainTable("Caches")) {
+								try (var table = new PlainTable("Caches").define()) {
 									for (var entry : caches.sorted) {
 										table.add("Status", entry.status).tone(entry.status.tone);
 										if (entry != details) {
@@ -358,7 +358,7 @@ public class CacheReport {
 									if (details.input.result() != null) {
 										var parameters = details.input.result().parameters();
 										if (!parameters.isEmpty()) {
-											try (var table = new PlainTable("Parameters")) {
+											try (var table = new PlainTable("Parameters").define()) {
 												for (var name : StreamEx.of(parameters.keySet()).sorted()) {
 													table.add("Name", name).left();
 													table.add("Value", parameters.get(name)).left();
@@ -371,7 +371,7 @@ public class CacheReport {
 								}
 								if (dview.is("Dependencies")) {
 									if (!details.children.isEmpty()) {
-										try (var table = new PlainTable("Dependencies")) {
+										try (var table = new PlainTable("Dependencies").define()) {
 											for (var child : details.children) {
 												table.add("Status", child.status.label).tone(child.status.tone);
 												table.add("Cache", child.name).left();
