@@ -1,6 +1,8 @@
 // Part of PMData: https://pmdata.machinezoo.com
 package com.machinezoo.pmdata.widgets;
 
+import java.util.*;
+import java.util.function.*;
 import com.machinezoo.noexception.*;
 import com.machinezoo.pmsite.*;
 import com.machinezoo.pushmode.dom.*;
@@ -13,37 +15,69 @@ import com.machinezoo.stagean.*;
  * 
  * There's currently no support for left-only or right-only layout as that adds a lot of complexity.
  * Wide content (tables) in the main column will have scrollbar if it supports one.
- * 
- * This object is AutoCloseable for use in try-with-resources.
- * That may be inconvenient in rare cases, but it makes for concise and simple API in most cases.
  */
 @DraftApi
-public class SidebarLayout implements AutoCloseable {
-	private final SiteFragment parent = SiteFragment.get();
-	private final SiteFragment main = parent.nest("main");
-	private final SiteFragment left = parent.nest("left");
-	private final SiteFragment right = parent.nest("right");
-	private CloseableScope current;
+public class SidebarLayout {
+	private final SiteFragment main;
+	public SiteFragment main() {
+		return main;
+	}
+	private final SiteFragment left;
+	public SiteFragment left() {
+		return left;
+	}
+	private final SiteFragment right;
+	public SiteFragment right() {
+		return right;
+	}
+	private SidebarLayout(SiteFragment main, SiteFragment left, SiteFragment right) {
+		this.main = main;
+		this.left = left;
+		this.right = right;
+	}
+	private SidebarLayout(SiteFragment parent) {
+		this(parent.isolate(), parent.isolate(), parent.isolate());
+	}
 	public SidebarLayout() {
-		current = main.open();
+		this(SiteFragment.get());
 	}
-	private void select(SiteFragment fragment) {
-		current.close();
-		current = fragment.open();
+	private static final ThreadLocal<SidebarLayout> current = new ThreadLocal<>();
+	public static Optional<SidebarLayout> current() {
+		var layout = current.get();
+		if (layout == null)
+			return Optional.empty();
+		var fragment = SiteFragment.current().orElse(null);
+		/*
+		 * Do not return the current sidebar layout if current fragment is not part of the layout.
+		 * This happens when sidebar layout is hidden below nested fragment.
+		 * Returning the sidebar layout in this situation would allow widgets to escape isolation.
+		 */
+		if (fragment != layout.main && fragment != layout.left && fragment != layout.right)
+			return Optional.empty();
+		return Optional.of(layout);
 	}
-	public void main() {
-		select(main);
+	public static SidebarLayout get() {
+		return current().orElseGet(() -> {
+			/*
+			 * If there is no current sidebar layout (or there is a nested SiteFragment over it),
+			 * return fake instance that just references current SiteFragment from all three columns.
+			 * This will cause widgets to render into current SiteFragment instead.
+			 */
+			var fragment = SiteFragment.get();
+			return new SidebarLayout(fragment, fragment, fragment);
+		});
 	}
-	public void left() {
-		select(left);
+	public CloseableScope open() {
+		var outer = current.get();
+		current.set(this);
+		var fragmentScope = main.open();
+		return () -> {
+			fragmentScope.close();
+			current.set(outer);
+		};
 	}
-	public void right() {
-		select(right);
-	}
-	@Override
-	public void close() {
-		current.close();
-		parent.add(Html.div()
+	public void render() {
+		SiteFragment.get().add(Html.div()
 			.clazz("sidebar-container")
 			.add(Html.div()
 				.clazz("sidebar-left")
@@ -58,5 +92,22 @@ public class SidebarLayout implements AutoCloseable {
 			.add(Html.div()
 				.clazz("sidebar-main")
 				.add(main.content())));
+	}
+	public CloseableScope define() {
+		var scope = open();
+		return () -> {
+			scope.close();
+			render();
+		};
+	}
+	public static <T> T supplyLeft(Supplier<T> supplier) {
+		try (var scope = SidebarLayout.get().left().open()) {
+			return supplier.get();
+		}
+	}
+	public static <T> T supplyRight(Supplier<T> supplier) {
+		try (var scope = SidebarLayout.get().right().open()) {
+			return supplier.get();
+		}
 	}
 }
