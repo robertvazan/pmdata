@@ -9,10 +9,14 @@ public class SecondFormatter implements DoubleValueFormatter {
 	}
 	@Override
 	public String plain(double value) {
-		return new DurationFormatter().plain(convert(value));
+		if (Math.abs(value) >= 0.000_001)
+			return new DurationFormatter().plain(convert(value));
+		return new UnitFormatter("s").plain(value);
 	}
 	@Override
 	public String detail(double value) {
-		return new DurationFormatter().detail(convert(value));
+		if (Math.abs(value) >= 0.000_001)
+			return new DurationFormatter().detail(convert(value));
+		return new UnitFormatter("s").detail(value);
 	}
 }
