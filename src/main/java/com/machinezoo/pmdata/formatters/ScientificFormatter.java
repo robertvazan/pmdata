@@ -7,6 +7,8 @@ import com.machinezoo.pushmode.dom.*;
 
 public class ScientificFormatter implements DoubleValueFormatter {
 	private static char superscript(char symbol) {
+		if (symbol == '-')
+			return '⁻';
 		if (symbol == '2')
 			return '²';
 		if (symbol == '3')
