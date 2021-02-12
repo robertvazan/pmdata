@@ -91,7 +91,9 @@ public class SidebarLayout {
 					.add(right.content())))
 			.add(Html.div()
 				.clazz("sidebar-main")
-				.add(main.content())));
+				.add(Html.div()
+					.clazz("sidebar-main-box")
+					.add(main.content()))));
 	}
 	public CloseableScope define() {
 		var scope = open();
