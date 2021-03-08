@@ -61,7 +61,7 @@ public class IntPicker {
 	public int render() {
 		if (items.isEmpty())
 			throw new IllegalStateException("Picker must have at least one item.");
-		List<Integer> list = items.stream().collect(toList());
+		List<Integer> list = items.intStream().boxed().collect(toList());
 		var fallback = this.fallback != null ? this.fallback : list.get(0);
 		var binding = this.binding != null ? this.binding : IntBinding.of(title);
 		return new ItemPicker<Integer>().title(title).add(list).fallback(fallback).binding(binding.asData()).naming(n -> naming.apply(n)).pick();

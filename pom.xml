@@ -44,25 +44,20 @@
 
 	<dependencies>
 		<dependency>
-			<groupId>com.machinezoo.stagean</groupId>
-			<artifactId>stagean</artifactId>
-			<version>1.0.2</version>
-		</dependency>
-		<dependency>
 			<groupId>com.machinezoo.pmsite</groupId>
 			<artifactId>pmsite</artifactId>
-			<version>0.16.0</version>
+			<version>0.16.1</version>
 		</dependency>
 		<dependency>
 			<groupId>one.util</groupId>
 			<artifactId>streamex</artifactId>
-			<version>0.7.2</version>
+			<version>0.7.3</version>
 		</dependency>
 		<dependency>
 			<!-- Used to serialize cache content output. -->
 			<groupId>com.esotericsoftware</groupId>
 			<artifactId>kryo</artifactId>
-			<version>5.0.0-RC9</version>
+			<version>5.0.3</version>
 		</dependency>
 		<dependency>
 			<!-- Used to serialize cache content and to store local preferences. -->
@@ -80,13 +75,13 @@
 		<dependency>
 			<groupId>org.jfree</groupId>
 			<artifactId>jfreechart</artifactId>
-			<version>1.5.0</version>
+			<version>1.5.3</version>
 		</dependency>
 		<dependency>
 			<!-- Used to render charts into SVG. -->
 			<groupId>org.apache.xmlgraphics</groupId>
 			<artifactId>batik-all</artifactId>
-			<version>1.12</version>
+			<version>1.14</version>
 			<exclusions>
 				<exclusion>
 					<!-- This is probably some old version that conflicts with newer module-based one as far as I remember. -->
@@ -103,7 +98,7 @@
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter</artifactId>
-			<version>5.6.0</version>
+			<version>5.7.1</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
