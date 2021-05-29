@@ -11,6 +11,7 @@ import com.google.common.cache.*;
 import com.machinezoo.hookless.*;
 import com.machinezoo.noexception.*;
 import com.machinezoo.pmdata.caching.*;
+import com.machinezoo.pmdata.widgets.*;
 import com.machinezoo.pmsite.*;
 import com.machinezoo.pushmode.dom.*;
 import com.machinezoo.stagean.*;
@@ -37,9 +38,19 @@ public class DataWidgets {
 					 */
 					runnable.run();
 				} catch (Throwable ex) {
-					if (!ExceptionUtils.getThrowableList(ex).stream().anyMatch(x -> x instanceof EmptyCacheException) && !CurrentReactiveScope.blocked())
+					if (!ExceptionUtils.getThrowableList(ex).stream().anyMatch(x -> x instanceof EmptyCacheException || x instanceof WidgetException)
+						&& !CurrentReactiveScope.blocked()) {
 						logger.error("DataWidget threw an exception.", ex);
-					partial.exception = ex;
+					}
+					try {
+						for (var cause : ExceptionUtils.getThrowableList(ex))
+							if (cause instanceof WidgetException)
+								((WidgetException)cause).render();
+					} catch (Throwable nex) {
+						logger.error("WidgetException failed to render.", nex);
+					}
+					if (!ExceptionUtils.getThrowableList(ex).stream().anyMatch(x -> x instanceof WidgetException))
+						partial.exception = ex;
 				}
 			}
 			return partial;
