@@ -7,11 +7,16 @@ import com.machinezoo.stagean.*;
 
 @DraftApi
 public abstract class DevelopmentStageNotice {
+	protected abstract Tone tone();
 	protected abstract String name();
 	protected abstract String title();
 	protected abstract String description();
 	protected abstract String leadin();
 	public static class Stub extends DevelopmentStageNotice {
+		@Override
+		protected Tone tone() {
+			return Tone.INFO;
+		}
 		@Override
 		protected String name() {
 			return "stub";
@@ -31,6 +36,10 @@ public abstract class DevelopmentStageNotice {
 	}
 	public static class Draft extends DevelopmentStageNotice {
 		@Override
+		protected Tone tone() {
+			return Tone.INFO;
+		}
+		@Override
 		protected String name() {
 			return "draft";
 		}
@@ -47,8 +56,30 @@ public abstract class DevelopmentStageNotice {
 			return "Known issues:";
 		}
 	}
+	public static class Obsolete extends DevelopmentStageNotice {
+		@Override
+		protected Tone tone() {
+			return Tone.WARNING;
+		}
+		@Override
+		protected String name() {
+			return "obsolete";
+		}
+		@Override
+		protected String title() {
+			return "Obsolete article";
+		}
+		@Override
+		protected String description() {
+			return "Information presented on this page might be out of date.";
+		}
+		@Override
+		protected String leadin() {
+			return "Reason:";
+		}
+	}
 	public void render(DomContent content) {
-		Notice.info(new DomFragment()
+		Notice.show(tone(), new DomFragment()
 			.add(Html.b().add(title()))
 			.add(Html.br())
 			.add(description())
@@ -73,5 +104,6 @@ public abstract class DevelopmentStageNotice {
 	public static void registerAll(SiteTemplate template) {
 		new Stub().register(template);
 		new Draft().register(template);
+		new Obsolete().register(template);
 	}
 }
