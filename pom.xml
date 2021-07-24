@@ -4,7 +4,7 @@
 
 	<groupId>com.machinezoo.pmdata</groupId>
 	<artifactId>pmdata</artifactId>
-	<version>0.7.1</version>
+	<version>0.8.0</version>
 	<packaging>jar</packaging>
 
 	<name>PMData</name>
