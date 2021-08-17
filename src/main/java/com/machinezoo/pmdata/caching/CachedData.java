@@ -1,10 +1,12 @@
 package com.machinezoo.pmdata.caching;
 
 import java.util.*;
+import java.util.concurrent.*;
 import com.google.common.cache.*;
 import com.machinezoo.hookless.*;
 
 class CachedData {
+	static final ConcurrentMap<LazyCache<?>, Object> lazy = new ConcurrentHashMap<>();
 	/*
 	 * Soft-valued cache may cause extremely inefficient GC behavior:
 	 * https://bugs.openjdk.java.net/browse/JDK-6912889
