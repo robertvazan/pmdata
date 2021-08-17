@@ -3,18 +3,34 @@ package com.machinezoo.pmdata.caching;
 
 import java.util.function.*;
 
-public abstract class KryoCache<T> extends PersistentCache<KryoFile<T>> implements Supplier<T> {
-	public abstract T compute();
+public interface KryoCache<T> extends PersistentCache<KryoFile<T>>, Supplier<T>, PersistentSource<T> {
+	T compute();
 	@Override
-	public CacheFormat<KryoFile<T>> format() {
+	default CacheFormat<KryoFile<T>> format() {
 		return KryoFile.format();
 	}
 	@Override
-	public KryoFile<T> supply() {
+	default KryoFile<T> supply() {
 		return KryoFile.of(compute());
 	}
 	@Override
-	public T get() {
+	default void touch() {
+		if (this instanceof CanonicalPersistentSource) {
+			var canonical = ((CanonicalPersistentSource<?>)this).canonicalize();
+			if (!canonical.equals(this)) {
+				canonical.touch();
+				return;
+			}
+		}
+		PersistentCache.super.touch();
+	}
+	@Override
+	default T get() {
+		if (this instanceof CanonicalPersistentSource) {
+			@SuppressWarnings("unchecked") var canonical = ((CanonicalPersistentSource<T>)this).canonicalize();
+			if (!canonical.equals(this))
+				return canonical.get();
+		}
 		return file().read();
 	}
 }

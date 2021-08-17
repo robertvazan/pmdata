@@ -7,10 +7,10 @@ import com.machinezoo.noexception.*;
 import com.machinezoo.stagean.*;
 
 @DraftCode("could use 304 Not Modified optimization (in conjunction with PersistentCache.update())")
-public abstract class DownloadCache extends BinaryCache {
-	public abstract URI uri();
+public interface DownloadCache extends BinaryCache {
+	URI uri();
 	@Override
-	public BinaryFile supply() {
+	default BinaryFile supply() {
 		/*
 		 * Streamed to allow download of large files.
 		 */

@@ -4,21 +4,34 @@ package com.machinezoo.pmdata.caching;
 import java.util.*;
 import java.util.function.*;
 
-public abstract class MapCache<K, V> extends PersistentCache<MapFile<K, V>> implements Supplier<Map<K, V>> {
-	public abstract MapFile<K, V> compute();
+public interface MapCache<K, V> extends PersistentCache<MapFile<K, V>>, Supplier<Map<K, V>>, PersistentMapSource<K, V> {
+	MapFile<K, V> compute();
 	@Override
-	public CacheFormat<MapFile<K, V>> format() {
+	default CacheFormat<MapFile<K, V>> format() {
 		return MapFile.format();
 	}
 	@Override
-	public MapFile<K, V> supply() {
+	default MapFile<K, V> supply() {
 		return compute();
 	}
 	@Override
-	public Map<K, V> get() {
-		return file().map();
+	default void touch() {
+		if (this instanceof CanonicalPersistentSource) {
+			var canonical = ((CanonicalPersistentSource<?>)this).canonicalize();
+			if (!canonical.equals(this)) {
+				canonical.touch();
+				return;
+			}
+		}
+		PersistentCache.super.touch();
 	}
-	public V get(K key) {
-		return file().get(key);
+	@Override
+	default Map<K, V> get() {
+		if (this instanceof CanonicalPersistentSource) {
+			@SuppressWarnings("unchecked") var canonical = ((CanonicalPersistentSource<Map<K, V>>)this).canonicalize();
+			if (!canonical.equals(this))
+				return canonical.get();
+		}
+		return file().map();
 	}
 }

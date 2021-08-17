@@ -4,24 +4,24 @@ package com.machinezoo.pmdata.caching;
 import java.io.*;
 import java.nio.*;
 
-public abstract class BinaryCache extends PersistentCache<BinaryFile> {
+public interface BinaryCache extends PersistentCache<BinaryFile> {
 	@Override
-	public CacheFormat<BinaryFile> format() {
+	default CacheFormat<BinaryFile> format() {
 		return BinaryFile.format();
 	}
-	public BinaryFile get() {
+	default BinaryFile get() {
 		return file();
 	}
-	public byte[] read() {
+	default byte[] read() {
 		return get().read();
 	}
-	public String text() {
+	default String text() {
 		return get().text();
 	}
-	public InputStream stream() {
+	default InputStream stream() {
 		return get().stream();
 	}
-	public MappedByteBuffer mmap() {
+	default MappedByteBuffer mmap() {
 		return get().mmap();
 	}
 }
