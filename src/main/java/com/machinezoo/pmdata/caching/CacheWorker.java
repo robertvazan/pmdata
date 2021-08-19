@@ -99,7 +99,7 @@ public class CacheWorker<T extends CacheFile> {
 						 * It is nevertheless reasonable for linker-declared dependencies to be a superset of actually used dependencies.
 						 */
 						try (var inputScope = input.record()) {
-							data = owner.cache.supply();
+							data = owner.cache.computeCache();
 						}
 						/*
 						 * Any reactive blocking means the data is not up to date even if input hash matches.

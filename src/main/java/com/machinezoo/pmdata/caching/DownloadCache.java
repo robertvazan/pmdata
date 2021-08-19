@@ -10,7 +10,7 @@ import com.machinezoo.stagean.*;
 public interface DownloadCache extends BinaryCache {
 	URI uri();
 	@Override
-	default BinaryFile supply() {
+	default BinaryFile computeCache() {
 		/*
 		 * Streamed to allow download of large files.
 		 */

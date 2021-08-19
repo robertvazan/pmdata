@@ -6,11 +6,11 @@ import java.util.function.*;
 public interface KryoCache<T> extends PersistentCache<KryoFile<T>>, Supplier<T>, PersistentSource<T> {
 	T compute();
 	@Override
-	default CacheFormat<KryoFile<T>> format() {
+	default CacheFormat<KryoFile<T>> cacheFormat() {
 		return KryoFile.format();
 	}
 	@Override
-	default KryoFile<T> supply() {
+	default KryoFile<T> computeCache() {
 		return KryoFile.of(compute());
 	}
 	@Override
@@ -31,6 +31,6 @@ public interface KryoCache<T> extends PersistentCache<KryoFile<T>>, Supplier<T>,
 			if (!canonical.equals(this))
 				return canonical.get();
 		}
-		return file().read();
+		return getCache().read();
 	}
 }

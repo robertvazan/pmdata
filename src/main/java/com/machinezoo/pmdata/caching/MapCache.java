@@ -7,11 +7,11 @@ import java.util.function.*;
 public interface MapCache<K, V> extends PersistentCache<MapFile<K, V>>, Supplier<Map<K, V>>, PersistentMapSource<K, V> {
 	MapFile<K, V> compute();
 	@Override
-	default CacheFormat<MapFile<K, V>> format() {
+	default CacheFormat<MapFile<K, V>> cacheFormat() {
 		return MapFile.format();
 	}
 	@Override
-	default MapFile<K, V> supply() {
+	default MapFile<K, V> computeCache() {
 		return compute();
 	}
 	@Override
@@ -32,6 +32,6 @@ public interface MapCache<K, V> extends PersistentCache<MapFile<K, V>>, Supplier
 			if (!canonical.equals(this))
 				return canonical.get();
 		}
-		return file().map();
+		return getCache().map();
 	}
 }

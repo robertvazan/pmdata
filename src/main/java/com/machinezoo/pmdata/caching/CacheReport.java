@@ -174,7 +174,7 @@ public class CacheReport {
 				entry.status = CacheStatus.EMPTY;
 			else if (!entry.input.result().hash().equals(entry.snapshot.input()))
 				entry.status = CacheStatus.STALE;
-			else if (entry.cache.policy().period() != null && ReactiveInstant.now().isAfter(entry.snapshot.refreshed().plus(entry.cache.policy().period())))
+			else if (entry.cache.cachePolicy().period() != null && ReactiveInstant.now().isAfter(entry.snapshot.refreshed().plus(entry.cache.cachePolicy().period())))
 				entry.status = CacheStatus.EXPIRED;
 			/*
 			 * Show cancellation flag permanently, because dependencies of cancelled caches will not refresh automatically.

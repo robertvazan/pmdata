@@ -6,10 +6,10 @@ import com.machinezoo.stagean.*;
 
 @DraftApi("update() in addition to supply() that takes old CacheData as its parameter (may return the same)")
 public interface PersistentCache<T extends CacheFile> {
-	CacheFormat<T> format();
+	CacheFormat<T> cacheFormat();
 	void link();
-	T supply();
-	default CachePolicy policy() {
+	T computeCache();
+	default CachePolicy cachePolicy() {
 		return new CachePolicy();
 	}
 	/*
@@ -19,10 +19,10 @@ public interface PersistentCache<T extends CacheFile> {
 	default void touch() {
 		CacheInput.get().snapshot(this);
 	}
-	default T file() {
+	default T getCache() {
 		var snapshot = CacheInput.get().snapshot(this);
 		if (snapshot == null) {
-			if (policy().blocking())
+			if (cachePolicy().blocking())
 				CurrentReactiveScope.block();
 			throw new EmptyCacheException();
 		}

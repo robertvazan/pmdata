@@ -29,7 +29,7 @@ class CacheOwner<T extends CacheFile> {
 	CacheOwner(PersistentCache<T> cache) {
 		this.cache = cache;
 		OwnerTrace.of(this).tag("cache", cache);
-		policy = cache.policy().clone();
+		policy = cache.cachePolicy().clone();
 		snapshot = OwnerTrace
 			.of(new ReactiveVariable<>(CacheSnapshot.load(this)))
 			.parent(this)
@@ -54,7 +54,7 @@ class CacheOwner<T extends CacheFile> {
 		/*
 		 * Do not even create thread for caches with manual refresh.
 		 */
-		if (cache.policy().mode() != CacheRefreshMode.MANUAL)
+		if (cache.cachePolicy().mode() != CacheRefreshMode.MANUAL)
 			new CacheThread(this).start();
 	}
 	private static final ConcurrentMap<PersistentCache<?>, CacheOwner<?>> all = new ConcurrentHashMap<>();

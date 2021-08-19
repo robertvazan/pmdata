@@ -122,7 +122,7 @@ public class CacheSnapshot<T extends CacheFile> {
 			snapshot.refreshed = Instant.ofEpochMilli(saved.refreshed);
 			snapshot.cost = Duration.ofMillis(saved.cost);
 			if (saved.path != null)
-				snapshot.data = owner.cache.format().load(directory.resolve(Paths.get(saved.path)));
+				snapshot.data = owner.cache.cacheFormat().load(directory.resolve(Paths.get(saved.path)));
 			try (var listing = Files.list(directory)) {
 				for (var junk : listing.collect(toList())) {
 					if (!junk.equals(json) && (snapshot.data == null || !junk.equals(snapshot.data.path()))) {

@@ -6,11 +6,11 @@ import java.nio.*;
 
 public interface BinaryCache extends PersistentCache<BinaryFile> {
 	@Override
-	default CacheFormat<BinaryFile> format() {
+	default CacheFormat<BinaryFile> cacheFormat() {
 		return BinaryFile.format();
 	}
 	default BinaryFile get() {
-		return file();
+		return getCache();
 	}
 	default byte[] read() {
 		return get().read();
