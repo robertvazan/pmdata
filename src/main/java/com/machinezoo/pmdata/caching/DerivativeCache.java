@@ -6,11 +6,6 @@ public interface DerivativeCache<T> extends PersistentSource<T> {
 	@Override
 	@SuppressWarnings("unchecked")
 	default T get() {
-		if (this instanceof CanonicalPersistentSource) {
-			var canonical = ((CanonicalPersistentSource<T>)this).canonicalize();
-			if (!canonical.equals(this))
-				return canonical.get();
-		}
 		return (T)CachedData.derivative.getUnchecked(this).get().unpack();
 	}
 }
