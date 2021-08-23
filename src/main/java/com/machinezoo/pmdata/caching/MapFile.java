@@ -144,7 +144,20 @@ public class MapFile<K, V> implements CacheFile {
 			}
 			@Override
 			public boolean equals(Object obj) {
-				throw new UnsupportedOperationException();
+				if (obj == this)
+					return true;
+				if (!(obj instanceof Map))
+					return false;
+				Map<?, ?> other = (Map<?, ?>)obj;
+				if (size() != other.size())
+					return false;
+				for (var entry : entrySet())
+					if (!other.containsKey(entry.getKey()) || !Objects.equals(entry.getValue(), other.get(entry.getKey())))
+						return false;
+				for (var key : other.keySet())
+					if (!containsKey(key))
+						return false;
+				return true;
 			}
 			@Override
 			public V get(Object key) {
