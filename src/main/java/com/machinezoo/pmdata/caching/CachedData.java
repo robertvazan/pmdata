@@ -28,6 +28,9 @@ class CachedData {
 		.softValues()
 		.build(CacheLoader.from(k -> materialize(k)));
 	private static <T> ReactiveLazy<CacheDerivative<Object>> materialize(DerivativeCache<T> cache) {
-		return new ReactiveLazy<>(() -> CacheDerivative.capture(cache::compute));
+		return new ReactiveLazy<>(() -> CacheDerivative.capture(() -> {
+			cache.touch();
+			return cache.compute();
+		}));
 	}
 }
