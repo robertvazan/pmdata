@@ -4,6 +4,7 @@ package com.machinezoo.pmdata.caching;
 import java.nio.file.*;
 import com.esotericsoftware.kryo.io.*;
 import com.machinezoo.noexception.*;
+import com.ning.compress.lzf.util.*;
 
 record KryoCacheFile(KryoCache<?> definition) implements BinaryCache {
 	@Override
@@ -22,8 +23,8 @@ record KryoCacheFile(KryoCache<?> definition) implements BinaryCache {
 	public void compute(Path path) {
 		var value = definition.compute();
 		Exceptions.sneak().run(() -> {
-			try (var stream = Files.newOutputStream(path)) {
-				ThreadLocalKryo.get().writeClassAndObject(new Output(stream, 256), value);
+			try (var stream = new LZFFileOutputStream(path.toFile())) {
+				ThreadLocalKryo.get().writeClassAndObject(new Output(stream), value);
 			}
 		});
 	}
