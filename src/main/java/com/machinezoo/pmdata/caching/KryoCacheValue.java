@@ -10,8 +10,9 @@ record KryoCacheValue(Path path) implements ComputeCache<Object> {
 	@Override
 	public Object compute() {
 		return Exceptions.sneak().get(() -> {
-			try (var stream = new LZFFileInputStream(path.toFile())) {
-				return ThreadLocalKryo.get().readClassAndObject(new Input(stream));
+			try (	var stream = new LZFFileInputStream(path.toFile());
+					var input = new Input(stream)) {
+				return ThreadLocalKryo.get().readClassAndObject(input);
 			}
 		});
 	}

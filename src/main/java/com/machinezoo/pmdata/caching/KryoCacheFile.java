@@ -27,8 +27,9 @@ record KryoCacheFile(KryoCache<?> definition) implements BinaryCache {
 	public void compute(Path path) {
 		var value = definition.compute();
 		Exceptions.sneak().run(() -> {
-			try (var stream = new LZFFileOutputStream(path.toFile())) {
-				ThreadLocalKryo.get().writeClassAndObject(new Output(stream), value);
+			try (	var stream = new LZFFileOutputStream(path.toFile());
+					var output = new Output(stream)) {
+				ThreadLocalKryo.get().writeClassAndObject(output, value);
 			}
 		});
 	}
