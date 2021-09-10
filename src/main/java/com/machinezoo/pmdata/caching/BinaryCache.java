@@ -10,6 +10,9 @@ import com.machinezoo.noexception.*;
 public interface BinaryCache extends PersistentSource<byte[]> {
 	void link();
 	void compute(Path path);
+	default int version() {
+		return 0;
+	}
 	default CachingOptions caching() {
 		return CachingOptions.DEFAULT;
 	}

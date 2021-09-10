@@ -156,6 +156,9 @@ public class CacheInput {
 		try (var recording = input.record()) {
 			try {
 				owner.cache.link();
+				int version = owner.cache.version();
+				if (version != 0)
+					CacheInput.get().parameter("version", version);
 				input.freeze();
 				/*
 				 * Verify that input hash can be calculated. This will call toString() on all the parameters.

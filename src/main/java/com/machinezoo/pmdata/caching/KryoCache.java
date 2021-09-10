@@ -4,6 +4,9 @@ package com.machinezoo.pmdata.caching;
 public interface KryoCache<T> extends PersistentSource<T> {
 	void link();
 	T compute();
+	default int version() {
+		return 0;
+	}
 	default CachingOptions caching() {
 		return CachingOptions.DEFAULT;
 	}

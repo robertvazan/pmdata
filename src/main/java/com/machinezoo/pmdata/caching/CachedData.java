@@ -29,7 +29,18 @@ class CachedData {
 		.build(CacheLoader.from(k -> materialize(k)));
 	private static <T> ReactiveLazy<CacheDerivative<Object>> materialize(DerivativeCache<T> cache) {
 		return new ReactiveLazy<>(() -> CacheDerivative.capture(() -> {
+			/*
+			 * Touch the cache just in case there are extra dependencies there.
+			 */
 			cache.touch();
+			int version = cache.version();
+			if (version != 0) {
+				/*
+				 * This is inlined in dependencies of other caches. We therefore cannot use constant parameter name.
+				 * We will use cache's toString() to ensure every derivative cache has its own version dependency.
+				 */
+				CacheInput.get().parameter(cache.toString(), version);
+			}
 			return cache.compute();
 		}));
 	}
