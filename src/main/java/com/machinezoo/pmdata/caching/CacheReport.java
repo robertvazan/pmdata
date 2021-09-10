@@ -63,14 +63,14 @@ public class CacheReport {
 		}
 	}
 	private static class CacheInfo {
-		PersistentCache<?> cache;
-		CacheWorker<?> worker;
+		BinaryCache cache;
+		CacheWorker worker;
 		/*
 		 * Stringified cache ID.
 		 */
 		String name;
 		ReactiveValue<CacheInput> input;
-		CacheSnapshot<?> snapshot;
+		CacheSnapshot snapshot;
 		List<CacheInfo> children;
 		/*
 		 * Maximum depth.
@@ -82,7 +82,7 @@ public class CacheReport {
 	}
 	private static class CacheCollection {
 		List<CacheInfo> sorted = new ArrayList<>();
-		Map<PersistentCache<?>, CacheInfo> hashed = new HashMap<>();
+		Map<BinaryCache, CacheInfo> hashed = new HashMap<>();
 		/*
 		 * Depth-first search. Sorted cache list will always have dependencies sorted before dependent cache (child-first order).
 		 */
@@ -174,7 +174,7 @@ public class CacheReport {
 				entry.status = CacheStatus.EMPTY;
 			else if (!entry.input.result().hash().equals(entry.snapshot.input()))
 				entry.status = CacheStatus.STALE;
-			else if (entry.cache.cachePolicy().period() != null && ReactiveInstant.now().isAfter(entry.snapshot.refreshed().plus(entry.cache.cachePolicy().period())))
+			else if (entry.cache.caching().period() != null && ReactiveInstant.now().isAfter(entry.snapshot.refreshed().plus(entry.cache.caching().period())))
 				entry.status = CacheStatus.EXPIRED;
 			/*
 			 * Show cancellation flag permanently, because dependencies of cancelled caches will not refresh automatically.

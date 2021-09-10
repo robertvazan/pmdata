@@ -10,8 +10,8 @@ import one.util.streamex.*;
  * Automatic refresh scheduling. There's one thread per cache except for manual caches.
  */
 class CacheThread extends ReactiveThread {
-	private final CacheOwner<?> owner;
-	CacheThread(CacheOwner<?> owner) {
+	private final CacheOwner owner;
+	CacheThread(CacheOwner owner) {
 		this.owner = owner;
 		OwnerTrace.of(this).parent(owner);
 	}

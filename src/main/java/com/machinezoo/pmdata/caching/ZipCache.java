@@ -21,11 +21,8 @@ public class ZipCache {
 	public static ZipCache of(Path path) {
 		return new ZipCache(() -> path);
 	}
-	public static ZipCache of(BinaryFile file) {
-		return new ZipCache(() -> file.path());
-	}
 	public static ZipCache of(BinaryCache cache) {
-		return new ZipCache(() -> cache.get().path());
+		return new ZipCache(() -> cache.path());
 	}
 	public ZipFile zip() {
 		return lookup(supplier.get());

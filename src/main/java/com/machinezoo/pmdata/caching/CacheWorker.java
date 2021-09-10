@@ -1,6 +1,7 @@
 // Part of PMData: https://pmdata.machinezoo.com
 package com.machinezoo.pmdata.caching;
 
+import java.nio.file.*;
 import java.time.*;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.*;
@@ -9,17 +10,17 @@ import org.slf4j.*;
 import com.machinezoo.hookless.*;
 import com.machinezoo.hookless.util.*;
 
-public class CacheWorker<T extends CacheFile> {
+public class CacheWorker {
 	private static final Logger logger = LoggerFactory.getLogger(CacheWorker.class);
-	private final CacheOwner<T> owner;
-	CacheWorker(CacheOwner<T> owner) {
+	private final CacheOwner owner;
+	CacheWorker(CacheOwner owner) {
 		this.owner = owner;
 		OwnerTrace.of(this).parent(owner);
 	}
-	public static <T extends CacheFile> CacheWorker<T> of(PersistentCache<T> cache) {
+	public static CacheWorker of(BinaryCache cache) {
 		return CacheOwner.of(cache).worker;
 	}
-	public PersistentCache<T> cache() {
+	public BinaryCache cache() {
 		return owner.cache;
 	}
 	private final ReactiveVariable<Progress> progress = OwnerTrace
@@ -68,7 +69,7 @@ public class CacheWorker<T extends CacheFile> {
 						progress.tick();
 						started.set(Instant.now());
 					}
-					T data;
+					Path path;
 					try (
 							var goalScope = progress.track();
 							/*
@@ -99,7 +100,9 @@ public class CacheWorker<T extends CacheFile> {
 						 * It is nevertheless reasonable for linker-declared dependencies to be a superset of actually used dependencies.
 						 */
 						try (var inputScope = input.record()) {
-							data = owner.cache.computeCache();
+							var temporary = CacheFiles.next();
+							owner.cache.compute(temporary);
+							path = temporary;
 						}
 						/*
 						 * Any reactive blocking means the data is not up to date even if input hash matches.
@@ -107,7 +110,7 @@ public class CacheWorker<T extends CacheFile> {
 						if (CurrentReactiveScope.blocked())
 							throw new ReactiveBlockingException();
 					}
-					CacheSnapshot.update(owner, data, input, started.get());
+					CacheSnapshot.update(owner, path, input, started.get());
 					logger.info("Refreshed {}.", this);
 				} finally {
 					lock.unlock();

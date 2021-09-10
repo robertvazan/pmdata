@@ -51,15 +51,15 @@ public class CacheInput {
 			inconsistent = true;
 		}
 	}
-	private Map<PersistentCache<?>, CacheSnapshot<?>> snapshots = new HashMap<>();
-	public synchronized Map<PersistentCache<?>, CacheSnapshot<?>> snapshots() {
+	private Map<BinaryCache, CacheSnapshot> snapshots = new HashMap<>();
+	public synchronized Map<BinaryCache, CacheSnapshot> snapshots() {
 		return frozen ? snapshots : new HashMap<>(snapshots);
 	}
 	private void modify() {
 		if (frozen)
 			throw new IllegalStateException("Cache input cannot be modified anymore.");
 	}
-	public synchronized <T extends CacheFile> void snapshot(PersistentCache<T> cache, CacheSnapshot<T> snapshot) {
+	public synchronized void snapshot(BinaryCache cache, CacheSnapshot snapshot) {
 		if (!snapshots.containsKey(cache)) {
 			modify();
 			snapshots.put(cache, snapshot);
@@ -68,8 +68,7 @@ public class CacheInput {
 			inconsistent = true;
 		}
 	}
-	@SuppressWarnings("unchecked")
-	public synchronized <T extends CacheFile> CacheSnapshot<T> snapshot(PersistentCache<T> cache) {
+	public synchronized CacheSnapshot snapshot(BinaryCache cache) {
 		var snapshot = snapshots.get(cache);
 		if (snapshot == null) {
 			/*
@@ -80,7 +79,7 @@ public class CacheInput {
 				snapshots.put(cache, snapshot = CacheSnapshot.of(cache));
 			}
 		}
-		return (CacheSnapshot<T>)snapshot;
+		return snapshot;
 	}
 	/*
 	 * We will store parameters that area arbitrary objects. They can even be null.
@@ -121,11 +120,10 @@ public class CacheInput {
 		}
 		return (T)stored;
 	}
-	@SuppressWarnings("unchecked")
 	public synchronized void unpack() {
 		var into = get();
 		for (var entry : snapshots.entrySet())
-			into.snapshot((PersistentCache<CacheFile>)entry.getKey(), (CacheSnapshot<CacheFile>)entry.getValue());
+			into.snapshot(entry.getKey(), entry.getValue());
 		for (var entry : parameters.entrySet())
 			into.parameter(entry.getKey(), entry.getValue());
 		if (inconsistent)
@@ -153,7 +151,7 @@ public class CacheInput {
 			frozen = true;
 		}
 	}
-	static CacheInput link(CacheOwner<?> owner) {
+	static CacheInput link(CacheOwner owner) {
 		var input = new CacheInput();
 		try (var recording = input.record()) {
 			try {
@@ -181,7 +179,7 @@ public class CacheInput {
 		}
 		return input;
 	}
-	public static CacheInput of(PersistentCache<?> cache) {
+	public static CacheInput of(BinaryCache cache) {
 		return CacheOwner.of(cache).input.get();
 	}
 }

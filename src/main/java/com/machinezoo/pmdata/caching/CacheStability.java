@@ -9,7 +9,7 @@ import one.util.streamex.*;
  * Recursive cache stability indicator.
  */
 class CacheStability {
-	static boolean evaluate(CacheOwner<?> owner) {
+	static boolean evaluate(CacheOwner owner) {
 		var snapshot = owner.snapshot.get();
 		/*
 		 * Empty, failing, or cancelled cache. Mark the cache as unstable even if there's an older value available.

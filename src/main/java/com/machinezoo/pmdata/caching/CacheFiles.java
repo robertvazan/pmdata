@@ -56,7 +56,7 @@ public class CacheFiles {
 		var hash = Hashing.sha256().hashString(text, StandardCharsets.UTF_8).asBytes();
 		return Base64.getUrlEncoder().encodeToString(hash).replace("=", "");
 	}
-	public static Path directory(PersistentCache<?> cache) {
+	public static Path directory(BinaryCache cache) {
 		var path = SiteFiles.cacheOf(CacheFiles.class.getSimpleName());
 		var name = cache.toString();
 		var matcher = filenameRe.matcher(name);
@@ -85,7 +85,7 @@ public class CacheFiles {
 		return () -> current.set(outer);
 	}
 	private static final SecureRandom random = new SecureRandom();
-	public static Path create() {
+	public static Path next() {
 		var bytes = new byte[32];
 		random.nextBytes(bytes);
 		return destination().resolve(Base64.getUrlEncoder().encodeToString(bytes).replace("=", ""));

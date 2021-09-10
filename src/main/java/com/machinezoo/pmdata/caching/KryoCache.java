@@ -1,24 +1,19 @@
 // Part of PMData: https://pmdata.machinezoo.com
 package com.machinezoo.pmdata.caching;
 
-import java.util.function.*;
-
-public interface KryoCache<T> extends PersistentCache<KryoFile<T>>, Supplier<T>, PersistentSource<T> {
+public interface KryoCache<T> extends PersistentSource<T> {
+	void link();
 	T compute();
-	@Override
-	default CacheFormat<KryoFile<T>> cacheFormat() {
-		return KryoFile.format();
-	}
-	@Override
-	default KryoFile<T> computeCache() {
-		return KryoFile.of(compute());
+	default CachePolicy caching() {
+		return new CachePolicy();
 	}
 	@Override
 	default void touch() {
-		PersistentCache.super.touch();
+		new KryoCacheFile(this).touch();
 	}
 	@Override
+	@SuppressWarnings("unchecked")
 	default T get() {
-		return getCache().read();
+		return (T)new KryoCacheValue(this).get();
 	}
 }

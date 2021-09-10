@@ -8,14 +8,14 @@ import com.machinezoo.hookless.util.*;
 /*
  * Central hub for all the cache-specific objects.
  */
-class CacheOwner<T extends CacheFile> {
-	final PersistentCache<T> cache;
+class CacheOwner {
+	final BinaryCache cache;
 	/*
 	 * Policy copy to prevent accidental changes by application code.
 	 */
 	final CachePolicy policy;
-	final ReactiveVariable<CacheSnapshot<T>> snapshot;
-	final CacheWorker<T> worker;
+	final ReactiveVariable<CacheSnapshot> snapshot;
+	final CacheWorker worker;
 	/*
 	 * CacheInput as captured by this worker has several flaws:
 	 * - It can be out of date.
@@ -26,16 +26,16 @@ class CacheOwner<T extends CacheFile> {
 	 */
 	final ReactiveWorker<CacheInput> input;
 	final ReactiveWorker<Boolean> stability;
-	CacheOwner(PersistentCache<T> cache) {
+	CacheOwner(BinaryCache cache) {
 		this.cache = cache;
 		OwnerTrace.of(this).tag("cache", cache);
-		policy = cache.cachePolicy().clone();
+		policy = cache.caching().clone();
 		snapshot = OwnerTrace
 			.of(new ReactiveVariable<>(CacheSnapshot.load(this)))
 			.parent(this)
 			.tag("role", "snapshot")
 			.target();
-		worker = new CacheWorker<>(this);
+		worker = new CacheWorker(this);
 		input = OwnerTrace
 			.of(new ReactiveWorker<CacheInput>(() -> CacheInput.link(this)))
 			.parent(this)
@@ -54,13 +54,12 @@ class CacheOwner<T extends CacheFile> {
 		/*
 		 * Do not even create thread for caches with manual refresh.
 		 */
-		if (cache.cachePolicy().mode() != CacheRefreshMode.MANUAL)
+		if (policy.mode() != CacheRefreshMode.MANUAL)
 			new CacheThread(this).start();
 	}
-	private static final ConcurrentMap<PersistentCache<?>, CacheOwner<?>> all = new ConcurrentHashMap<>();
-	@SuppressWarnings("unchecked")
-	static <T extends CacheFile> CacheOwner<T> of(PersistentCache<T> cache) {
-		return (CacheOwner<T>)all.computeIfAbsent(cache, key -> new CacheOwner<>(cache));
+	private static final ConcurrentMap<BinaryCache, CacheOwner> all = new ConcurrentHashMap<>();
+	static CacheOwner of(BinaryCache cache) {
+		return all.computeIfAbsent(cache, key -> new CacheOwner(cache));
 	}
 	@Override
 	public synchronized String toString() {
