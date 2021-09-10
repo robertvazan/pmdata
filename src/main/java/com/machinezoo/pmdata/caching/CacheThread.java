@@ -44,7 +44,7 @@ class CacheThread extends ReactiveThread {
 		 */
 		if (snapshot == null)
 			dirty = true;
-		var policy = owner.policy;
+		var policy = owner.cache.caching();
 		if (policy.mode() == CacheRefreshMode.AUTOMATIC && snapshot != null) {
 			/*
 			 * Stale cache.

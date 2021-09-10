@@ -4,8 +4,8 @@ package com.machinezoo.pmdata.caching;
 public interface KryoCache<T> extends PersistentSource<T> {
 	void link();
 	T compute();
-	default CachePolicy caching() {
-		return new CachePolicy();
+	default CachingOptions caching() {
+		return CachingOptions.DEFAULT;
 	}
 	@Override
 	default void touch() {

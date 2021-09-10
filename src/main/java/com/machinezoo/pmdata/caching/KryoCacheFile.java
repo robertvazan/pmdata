@@ -7,7 +7,7 @@ import com.machinezoo.noexception.*;
 
 record KryoCacheFile(KryoCache<?> definition) implements BinaryCache {
 	@Override
-	public CachePolicy caching() {
+	public CachingOptions caching() {
 		return definition.caching();
 	}
 	@Override

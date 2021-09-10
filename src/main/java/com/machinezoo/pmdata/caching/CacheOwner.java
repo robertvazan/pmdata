@@ -10,10 +10,6 @@ import com.machinezoo.hookless.util.*;
  */
 class CacheOwner {
 	final BinaryCache cache;
-	/*
-	 * Policy copy to prevent accidental changes by application code.
-	 */
-	final CachePolicy policy;
 	final ReactiveVariable<CacheSnapshot> snapshot;
 	final CacheWorker worker;
 	/*
@@ -28,8 +24,7 @@ class CacheOwner {
 	final ReactiveWorker<Boolean> stability;
 	CacheOwner(BinaryCache cache) {
 		this.cache = cache;
-		OwnerTrace.of(this).tag("cache", cache);
-		policy = cache.caching().clone();
+		OwnerTrace.of(this).tag("cache", cache.unwrap());
 		snapshot = OwnerTrace
 			.of(new ReactiveVariable<>(CacheSnapshot.load(this)))
 			.parent(this)
@@ -54,7 +49,7 @@ class CacheOwner {
 		/*
 		 * Do not even create thread for caches with manual refresh.
 		 */
-		if (policy.mode() != CacheRefreshMode.MANUAL)
+		if (cache.caching().mode() != CacheRefreshMode.MANUAL)
 			new CacheThread(this).start();
 	}
 	private static final ConcurrentMap<BinaryCache, CacheOwner> all = new ConcurrentHashMap<>();

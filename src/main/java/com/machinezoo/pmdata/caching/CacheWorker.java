@@ -55,7 +55,7 @@ public class CacheWorker {
 				 * Remove the "Scheduling" child added in schedule().
 				 */
 				progress.remove(progress.children().get(0));
-				var lock = owner.policy.exclusive() ? exclusivity.writeLock() : exclusivity.readLock();
+				var lock = owner.cache.caching().exclusive() ? exclusivity.writeLock() : exclusivity.readLock();
 				progress.run("Exclusivity", () -> lock.lock());
 				try {
 					logger.info("Refreshing {}.", this);
@@ -167,7 +167,7 @@ public class CacheWorker {
 			this.progress.set(progress);
 			logger.info("Scheduling {}.", this);
 			var refresh = new CacheRefresh(() -> refresh(progress));
-			refresh.exclusive = owner.policy.exclusive();
+			refresh.exclusive = owner.cache.caching().exclusive();
 			var snapshot = owner.snapshot.get();
 			if (snapshot != null)
 				refresh.cost = snapshot.cost();

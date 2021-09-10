@@ -16,7 +16,7 @@ class CacheStability {
 		 */
 		if (snapshot == null || snapshot.hash() == null || snapshot.exception() != null || snapshot.cancelled())
 			return false;
-		var policy = owner.policy;
+		var policy = owner.cache.caching();
 		/*
 		 * Expired cache.
 		 */

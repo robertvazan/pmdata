@@ -10,8 +10,8 @@ import com.machinezoo.noexception.*;
 public interface BinaryCache extends PersistentSource<byte[]> {
 	void link();
 	void compute(Path path);
-	default CachePolicy caching() {
-		return new CachePolicy();
+	default CachingOptions caching() {
+		return CachingOptions.DEFAULT;
 	}
 	/*
 	 * If this cache is a generic wrapper around higher level cache definition (e.g. KryoCache),
