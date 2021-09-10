@@ -111,7 +111,7 @@ public class CacheReport {
 					 * Guard against self-referencing caches.
 					 */
 					if (!hashed.containsKey(cache)) {
-						info.name = cache.toString();
+						info.name = cache.unwrap().toString();
 						info.snapshot = input.snapshot(cache);
 						if (info.input.result() != null) {
 							info.children = StreamEx.of(info.input.result().snapshots().keySet())

@@ -14,6 +14,13 @@ public interface BinaryCache extends PersistentSource<byte[]> {
 		return new CachePolicy();
 	}
 	/*
+	 * If this cache is a generic wrapper around higher level cache definition (e.g. KryoCache),
+	 * this method provides access to that high-level definition. Used for visualization and file naming.
+	 */
+	default Object unwrap() {
+		return this;
+	}
+	/*
 	 * This has side effects like get() but without returning cached value or throwing.
 	 * It is intended to be used in link(). It might be faster than file().
 	 */

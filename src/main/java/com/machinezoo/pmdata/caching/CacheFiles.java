@@ -6,7 +6,6 @@ import java.nio.charset.*;
 import java.nio.file.*;
 import java.security.*;
 import java.util.*;
-import java.util.regex.*;
 import com.google.common.hash.*;
 import com.machinezoo.noexception.*;
 import com.machinezoo.pmsite.utils.*;
@@ -51,21 +50,15 @@ public class CacheFiles {
 				Files.delete(path);
 		});
 	}
-	private static final Pattern filenameRe = Pattern.compile("^[a-zA-Z0-9._-]+");
 	private static String hashId(String text) {
 		var hash = Hashing.sha256().hashString(text, StandardCharsets.UTF_8).asBytes();
 		return Base64.getUrlEncoder().encodeToString(hash).replace("=", "");
 	}
 	public static Path directory(BinaryCache cache) {
-		var path = SiteFiles.cacheOf(CacheFiles.class.getSimpleName());
-		var name = cache.toString();
-		var matcher = filenameRe.matcher(name);
-		if (matcher.find()) {
-			path = path.resolve(matcher.group());
-			if (matcher.end() == name.length())
-				return path;
-		}
-		return path.resolve(hashId(name));
+		var definition = cache.unwrap();
+		return SiteFiles.cacheOf(CacheFiles.class.getSimpleName())
+			.resolve(definition.getClass().getSimpleName())
+			.resolve(hashId(definition.toString()));
 	}
 	public static final Path DEFAULT_DESTINATION = SiteFiles.cacheOf(CacheFiles.class.getSimpleName()).resolve("default");
 	static {

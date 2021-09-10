@@ -11,6 +11,10 @@ record KryoCacheFile(KryoCache<?> definition) implements BinaryCache {
 		return definition.caching();
 	}
 	@Override
+	public Object unwrap() {
+		return definition;
+	}
+	@Override
 	public void link() {
 		definition.link();
 	}
