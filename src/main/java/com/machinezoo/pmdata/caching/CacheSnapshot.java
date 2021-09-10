@@ -108,6 +108,7 @@ public class CacheSnapshot {
 		try {
 			var saved = new Gson().fromJson(Files.readString(json), Saved.class);
 			var snapshot = new CacheSnapshot(owner);
+			snapshot.path = Path.of(saved.path);
 			snapshot.exception = saved.exception;
 			snapshot.cancelled = saved.cancelled;
 			Objects.requireNonNull(saved.input);
@@ -143,7 +144,7 @@ public class CacheSnapshot {
 	}
 	private void save() {
 		var directory = CacheFiles.directory(owner.cache);
-		var path = directory.resolve("cache.json");
+		var json = directory.resolve("cache.json");
 		try {
 			var saved = new Saved();
 			saved.id = owner.cache.toString();
@@ -157,13 +158,13 @@ public class CacheSnapshot {
 			saved.refreshed = refreshed.toEpochMilli();
 			saved.cost = cost.toMillis();
 			Files.createDirectories(directory);
-			Files.writeString(path, new GsonBuilder()
+			Files.writeString(json, new GsonBuilder()
 				.setPrettyPrinting()
 				.disableHtmlEscaping()
 				.create()
 				.toJson(saved));
 		} catch (Throwable ex) {
-			logger.error("Unable to save cache metadata in {}.", path, ex);
+			logger.error("Unable to save cache metadata in {}.", json, ex);
 		}
 	}
 	static void update(CacheOwner owner, Path path, CacheInput input, Instant started) {
