@@ -176,6 +176,6 @@ public class CacheWorker {
 	}
 	@Override
 	public synchronized String toString() {
-		return owner.toString();
+		return owner.cache.unwrap().toString();
 	}
 }
