@@ -14,6 +14,6 @@ public interface KryoCache<T> extends PersistentSource<T> {
 	@Override
 	@SuppressWarnings("unchecked")
 	default T get() {
-		return (T)new KryoCacheValue(this).get();
+		return (T)new KryoCacheValue(new KryoCacheFile(this).path()).get();
 	}
 }

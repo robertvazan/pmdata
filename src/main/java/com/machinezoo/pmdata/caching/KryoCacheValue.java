@@ -1,14 +1,15 @@
 // Part of PMData: https://pmdata.machinezoo.com
 package com.machinezoo.pmdata.caching;
 
+import java.nio.file.*;
 import com.esotericsoftware.kryo.io.*;
 import com.machinezoo.noexception.*;
 
-record KryoCacheValue(KryoCache<?> definition) implements ComputeCache<Object> {
+record KryoCacheValue(Path path) implements ComputeCache<Object> {
 	@Override
 	public Object compute() {
 		return Exceptions.sneak().get(() -> {
-			try (var stream = new KryoCacheFile(definition).stream()) {
+			try (var stream = Files.newInputStream(path)) {
 				return ThreadLocalKryo.get().readClassAndObject(new Input(stream));
 			}
 		});
