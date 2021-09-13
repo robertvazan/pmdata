@@ -3,7 +3,6 @@ package com.machinezoo.pmdata.caching;
 
 import com.machinezoo.hookless.*;
 import com.machinezoo.hookless.time.*;
-import one.util.streamex.*;
 
 /*
  * Recursive cache stability indicator.
@@ -49,7 +48,7 @@ class CacheStability {
 		/*
 		 * Unstable children.
 		 */
-		if (input.result() != null && StreamEx.of(input.result().snapshots().keySet()).anyMatch(c -> !CacheOwner.of(c).stability.get()))
+		if (input.result() != null && !input.result().stable())
 			return false;
 		return true;
 	}

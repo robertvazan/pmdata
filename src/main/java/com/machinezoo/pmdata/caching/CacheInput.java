@@ -143,6 +143,9 @@ public class CacheInput {
 	public synchronized String hash() {
 		return frozen ? hash : hashId(toString());
 	}
+	public boolean stable() {
+		return StreamEx.of(snapshots().keySet()).allMatch(c -> CacheOwner.of(c).stability.get());
+	}
 	public synchronized void freeze() {
 		if (!frozen) {
 			snapshots = Collections.unmodifiableMap(snapshots);
