@@ -2,6 +2,7 @@
 package com.machinezoo.pmdata.caching;
 
 import java.util.*;
+import java.util.function.*;
 import org.objenesis.strategy.*;
 import com.esotericsoftware.kryo.*;
 import com.esotericsoftware.kryo.util.*;
@@ -14,11 +15,14 @@ public class ThreadLocalKryo {
 	/*
 	 * Make the serializers globally configurable. In the future, we might want to use the ServiceLoader API.
 	 */
-	private static final Map<Class<?>, Class<? extends Serializer<?>>> serializers = new HashMap<>();
+	private static final List<Consumer<Kryo>> serializers = new ArrayList<>();
 	private static volatile long version;
-	public static synchronized void register(Class<?> type, Class<? extends Serializer<?>> serializer) {
-		serializers.put(type, serializer);
+	public static synchronized void register(Consumer<Kryo> serializer) {
+		serializers.add(serializer);
 		++version;
+	}
+	public static void register(Class<?> type, Class<? extends Serializer<?>> serializer) {
+		register(kryo -> kryo.addDefaultSerializer(type, serializer));
 	}
 	private static class VersionedKryo {
 		long version;
@@ -42,8 +46,8 @@ public class ThreadLocalKryo {
 				 * and then rely on that class ID during deserialization. That's too unreliable.
 				 * We will force kryo to serialize full class names instead.
 				 */
-				for (var entry : serializers.entrySet())
-					versioned.kryo.addDefaultSerializer(entry.getKey(), entry.getValue());
+				for (var serializer : serializers)
+					serializer.accept(versioned.kryo);
 			}
 			kryos.set(versioned);
 		}
