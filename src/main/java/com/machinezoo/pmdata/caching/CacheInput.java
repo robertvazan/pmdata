@@ -143,8 +143,22 @@ public class CacheInput {
 	public synchronized String hash() {
 		return frozen ? hash : hashId(toString());
 	}
-	public boolean stable() {
-		return StreamEx.of(snapshots().keySet()).allMatch(c -> CacheOwner.of(c).stability.get());
+	public CacheStability stability() {
+		var children = StreamEx.of(snapshots().keySet()).map(c -> CacheOwner.of(c).stability.get()).toList();
+		/*
+		 * Any failing dependency implies failing dependent cache.
+		 */
+		if (children.stream().anyMatch(s -> s == CacheStability.FAILING))
+			return CacheStability.FAILING;
+		/*
+		 * Any unstable dependency implies unstable dependent cache.
+		 */
+		if (children.stream().anyMatch(s -> s == CacheStability.UNSTABLE))
+			return CacheStability.UNSTABLE;
+		/*
+		 * All children are ready. Stability depends on state of dependent cache.
+		 */
+		return CacheStability.READY;
 	}
 	public synchronized void freeze() {
 		if (!frozen) {

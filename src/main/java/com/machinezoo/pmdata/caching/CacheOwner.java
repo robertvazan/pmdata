@@ -21,7 +21,7 @@ class CacheOwner {
 	 * These are all legitimate results. Callers have to deal with them.
 	 */
 	final ReactiveWorker<CacheInput> input;
-	final ReactiveWorker<Boolean> stability;
+	final ReactiveWorker<CacheStability> stability;
 	CacheOwner(BinaryCache cache) {
 		this.cache = cache;
 		OwnerTrace.of(this).tag("cache", cache.unwrap());
@@ -37,12 +37,12 @@ class CacheOwner {
 			.tag("role", "input")
 			.target();
 		stability = OwnerTrace
-			.of(new ReactiveWorker<Boolean>()
+			.of(new ReactiveWorker<CacheStability>()
 				.supplier(() -> CacheStability.evaluate(this))
 				/*
 				 * Do not ever block, not even initially. Simply report the cache as unstable.
 				 */
-				.initial(new ReactiveValue<>(false, false)))
+				.initial(new ReactiveValue<>(CacheStability.UNSTABLE, false)))
 			.parent(this)
 			.tag("role", "stability")
 			.target();

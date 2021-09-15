@@ -4,7 +4,6 @@ package com.machinezoo.pmdata.caching;
 import com.machinezoo.hookless.*;
 import com.machinezoo.hookless.time.*;
 import com.machinezoo.hookless.util.*;
-import one.util.streamex.*;
 
 /*
  * Automatic refresh scheduling. There's one thread per cache except for manual caches.
@@ -34,9 +33,9 @@ class CacheThread extends ReactiveThread {
 			return;
 		var snapshot = owner.snapshot.get();
 		/*
-		 * Unstable dependency.
+		 * Unstable or failing dependency.
 		 */
-		if (StreamEx.of(input.snapshots().keySet()).anyMatch(c -> !CacheOwner.of(c).stability.get()))
+		if (input.stability() != CacheStability.READY)
 			return;
 		boolean dirty = false;
 		/*

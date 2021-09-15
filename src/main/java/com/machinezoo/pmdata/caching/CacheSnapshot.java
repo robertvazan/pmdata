@@ -202,7 +202,7 @@ public class CacheSnapshot {
 		 * We never reuse input from previous snapshot, because then we wouldn't know
 		 * when to refresh failing or cancelled caches.
 		 */
-		next.input = input != null ? input.hash() : new CacheInput().hash();
+		next.input = input != null ? input.hash() : CacheInput.NONE.hash();
 		if (previous != null) {
 			next.path = previous.path;
 			next.hash = previous.hash;

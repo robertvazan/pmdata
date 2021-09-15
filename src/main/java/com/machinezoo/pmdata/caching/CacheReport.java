@@ -76,7 +76,7 @@ public class CacheReport {
 		 * Maximum depth.
 		 */
 		int depth;
-		boolean stable;
+		CacheStability stability;
 		CacheStatus status;
 		Progress progress;
 	}
@@ -120,7 +120,7 @@ public class CacheReport {
 								.toList();
 						} else
 							info.children = Collections.emptyList();
-						info.stable = owner.stability.get();
+						info.stability = owner.stability.get();
 						hashed.put(cache, info);
 						sorted.add(info);
 					}
@@ -181,7 +181,7 @@ public class CacheReport {
 			 */
 			else if (entry.snapshot.cancelled())
 				entry.status = CacheStatus.CANCELLED;
-			else if (!entry.stable)
+			else if (entry.stability != CacheStability.READY)
 				entry.status = CacheStatus.WAITING;
 			else
 				entry.status = CacheStatus.READY;
