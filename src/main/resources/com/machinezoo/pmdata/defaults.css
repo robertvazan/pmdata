@@ -62,17 +62,17 @@ body > header > ul > li > span {
 	background: white;
 	color: black;
 }
-main > article p, main > article h1, main > article h2, main > article h3, main > article ul, main > article ol,
+main > article p, main > article h1, main > article h2, main > article h3, main > article h4, main > article ul, main > article ol,
 main > article figcaption, main > article .article-header-breadcrumbs, main > article hr {
 	max-width: 800px;
 	margin-left: auto;
 	margin-right: auto;
 }
-main > article p, main > article h1, main > article h2, main > article h3, main > article figcaption,
+main > article p, main > article h1, main > article h2, main > article h3, main > article h4, main > article figcaption,
 main > article .article-header-breadcrumbs {
 	padding: 0 10px;
 }
-main > article p, main > article h1, main > article h2, main > article h3, main > article figcaption, main > article blockquote, main > article li {
+main > article p, main > article h1, main > article h2, main > article h3, main > article h4, main > article figcaption, main > article blockquote, main > article li {
 	overflow-wrap: break-word;
 }
 main > article h1 {
@@ -93,6 +93,11 @@ main > article h2 {
 }
 main > article h3 {
 	font-size: 18px;
+	line-height: 100%;
+	margin-top: 24px;
+}
+main > article h4 {
+	font-size: 16px;
 	line-height: 100%;
 	margin-top: 24px;
 }

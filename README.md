@@ -1,5 +1,5 @@
 [![Maven Central](https://img.shields.io/maven-central/v/com.machinezoo.pmdata/pmdata)](https://search.maven.org/artifact/com.machinezoo.pmdata/pmdata)
-[![Build Status](https://travis-ci.com/robertvazan/pmdata.svg?branch=master)](https://travis-ci.com/robertvazan/pmdata)
+[![Build Status](https://travis-ci.com/robertvazan/pmdata.svg?branch=master)](https://app.travis-ci.com/github/robertvazan/pmdata)
 [![Coverage Status](https://codecov.io/gh/robertvazan/pmdata/branch/master/graph/badge.svg)](https://codecov.io/gh/robertvazan/pmdata)
 
 # PMData #
