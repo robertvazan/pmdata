@@ -164,6 +164,8 @@
 				<version>3.2.0</version>
 				<configuration>
 					<notimestamp>true</notimestamp>
+					<!-- The library is not yet fully documented. -->
+					<doclint>all,-missing</doclint>
 				</configuration>
 				<executions>
 					<execution>
