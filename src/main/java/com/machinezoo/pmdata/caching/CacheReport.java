@@ -215,8 +215,8 @@ public class CacheReport {
 						.html()))
 				.render();
 			if (expanded) {
-				try (var view = new CasePicker("Cache view")) {
-					if (view.is("Summary")) {
+				new RunnablePicker("Cache view")
+					.add("Summary", () -> {
 						try (var table = new PlainTable("Cache summary").define()) {
 							var groups = StreamEx.of(caches.sorted).groupingBy(c -> c.status);
 							for (var key : StreamEx.of(groups.keySet()).sorted()) {
@@ -237,8 +237,8 @@ public class CacheReport {
 								table.add("Refreshed", snapshots.stream().map(s -> s.refreshed()).max(Comparator.naturalOrder()));
 							}
 						}
-					}
-					if (view.is("Progress")) {
+					})
+					.add("Progress", () -> {
 						var running = StreamEx.of(caches.sorted).filter(e -> e.status == CacheStatus.RUNNING).toList();
 						if (running.isEmpty())
 							Notice.info("No refresh in progress.");
@@ -275,8 +275,8 @@ public class CacheReport {
 								.format("Refresh queue contains %d cache(s).", queued)
 								.render();
 						}
-					}
-					if (view.is("Caches")) {
+					})
+					.add("Caches", () -> {
 						try (var table = new PlainTable("Caches").define()) {
 							for (var entry : caches.sorted) {
 								table.add("Status", entry.status).tone(entry.status.tone);
@@ -301,12 +301,17 @@ public class CacheReport {
 								table.add("Cache", entry.name).left();
 							}
 						}
-					}
-					if (view.is("Details")) {
+					})
+					.add("Details", () -> {
 						var detailsPref = prefs.get("show-details", null);
 						var details = caches.sorted.stream().filter(c -> c.name.equals(detailsPref)).findFirst().orElse(null);
-						try (var dview = new CasePicker("Cache details")) {
-							if (dview.is("Pick")) {
+						if (details != null) {
+							StaticContent.show("Selected cache", details.name);
+							if (details.input.blocking())
+								Notice.warn("Cache linker is blocking. Some information might not be available.");
+						}
+						var detailsPicker = new RunnablePicker("Cache details")
+							.add("Pick", () -> {
 								try (var table = new PlainTable("Caches").define()) {
 									for (var entry : caches.sorted) {
 										table.add("Status", entry.status).tone(entry.status.tone);
@@ -321,12 +326,10 @@ public class CacheReport {
 										table.add("Cache", entry.name).left();
 									}
 								}
-							} else if (details != null)
-								StaticContent.show("Selected cache", details.name);
-							if (details != null) {
-								if (details.input.blocking())
-									Notice.warn("Cache linker is blocking. Some information might not be available.");
-								if (dview.is("Cache")) {
+							});
+						if (details != null) {
+							detailsPicker
+								.add("Cache", () -> {
 									new StaticContent("Status")
 										.add(details.status.toString())
 										.tone(details.status.tone)
@@ -338,8 +341,8 @@ public class CacheReport {
 										StaticContent.show("Refresh started", started);
 									if (details.progress != null)
 										StaticContent.show("Progress", details.progress);
-								}
-								if (dview.is("Contents")) {
+								})
+								.add("Contents", () -> {
 									if (details.snapshot != null) {
 										var snapshot = details.snapshot;
 										StaticContent.show("Input hash", snapshot.input());
@@ -353,8 +356,8 @@ public class CacheReport {
 										StaticContent.show("Cancelled", snapshot.cancelled() ? "Yes" : "No");
 									} else
 										Notice.info("Cache is empty.");
-								}
-								if (dview.is("Parameters")) {
+								})
+								.add("Parameters", () -> {
 									if (details.input.result() != null) {
 										var parameters = details.input.result().parameters();
 										if (!parameters.isEmpty()) {
@@ -368,8 +371,8 @@ public class CacheReport {
 											Notice.info("Cache has no parameters.");
 									} else
 										Notice.info("Cache parameters have not been determined yet.");
-								}
-								if (dview.is("Dependencies")) {
+								})
+								.add("Dependencies", () -> {
 									if (!details.children.isEmpty()) {
 										try (var table = new PlainTable("Dependencies").define()) {
 											for (var child : details.children) {
@@ -379,19 +382,19 @@ public class CacheReport {
 										}
 									} else
 										Notice.info("Cache has no dependencies.");
-								}
-								if (dview.is("Exception")) {
+								})
+								.add("Exception", () -> {
 									if (details.input.exception() != null)
 										SiteFragment.get().add(Html.pre().clazz("site-error").add(new CachedException(details.input.exception()).getFormattedCause()));
 									else if (details.snapshot != null && details.snapshot.exception() != null)
 										SiteFragment.get().add(Html.pre().clazz("site-error").add(details.snapshot.exception()));
 									else
 										Notice.info("No exception was reported for this cache.");
-								}
-							}
+								});
 						}
-					}
-					if (view.is("Exception")) {
+						detailsPicker.run();
+					})
+					.add("Exception", () -> {
 						var error = exception != null && !empty
 							? new CachedException(exception).getFormattedCause()
 							: Stream
@@ -409,8 +412,8 @@ public class CacheReport {
 							SiteFragment.get().add(Html.pre().clazz("site-error").add(error));
 						else
 							Notice.info("No exception was reported.");
-					}
-				}
+					})
+					.run();
 			}
 		}
 		fragment.render();
