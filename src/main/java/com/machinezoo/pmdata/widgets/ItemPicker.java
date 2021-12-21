@@ -80,6 +80,11 @@ public class ItemPicker<T> {
 		this.fallback = fallback;
 		return this;
 	}
+	private Sidebar sidebar;
+	public ItemPicker<T> sidebar(Sidebar sidebar) {
+		this.sidebar = sidebar;
+		return this;
+	}
 	public T pick() {
 		if (items.isEmpty())
 			throw new IllegalStateException("Picker must have at least one item.");
@@ -109,6 +114,7 @@ public class ItemPicker<T> {
 			setter = v -> sbinding.set(naming.apply(v));
 		}
 		new ContentLabel(title)
+			.sidebar(sidebar)
 			.add(Html.ul()
 				.clazz("item-picker")
 				.add(items.stream()

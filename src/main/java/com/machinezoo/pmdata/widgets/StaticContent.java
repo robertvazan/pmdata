@@ -54,8 +54,14 @@ public class StaticContent {
 		this.tone = tone;
 		return this;
 	}
+	private Sidebar sidebar;
+	public StaticContent sidebar(Sidebar sidebar) {
+		this.sidebar = sidebar;
+		return this;
+	}
 	public void render() {
 		new ContentLabel(label)
+			.sidebar(sidebar)
 			.clazz(clazz)
 			.add(Html.div()
 				.clazz("static-content", tone != null ? tone.css() : null)

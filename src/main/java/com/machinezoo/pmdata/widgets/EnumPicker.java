@@ -19,7 +19,7 @@ public class EnumPicker<T extends Enum<T>> {
 		return this;
 	}
 	/*
-	 * Only one of clazz, fallback, and subset needs to be provided.
+	 * Only one of clazz, fallback, and items needs to be provided.
 	 */
 	private Class<T> clazz;
 	public EnumPicker<T> clazz(Class<T> clazz) {
@@ -81,6 +81,11 @@ public class EnumPicker<T extends Enum<T>> {
 		this.naming = naming;
 		return this;
 	}
+	private Sidebar sidebar;
+	public EnumPicker<T> sidebar(Sidebar sidebar) {
+		this.sidebar = sidebar;
+		return this;
+	}
 	@SuppressWarnings("unchecked")
 	public T pick() {
 		if (clazz == null && fallback == null && items.isEmpty())
@@ -92,7 +97,12 @@ public class EnumPicker<T extends Enum<T>> {
 		var items = !this.items.isEmpty() ? this.items : Arrays.asList(clazz.getEnumConstants());
 		if (binding == null)
 			binding = StringBinding.of(title).asEnum(clazz);
-		return new ItemPicker<T>().title(title).add(items).binding(binding).fallback(fallback).naming(naming).pick();
+		return new ItemPicker<T>(title, items)
+			.fallback(fallback)
+			.binding(binding)
+			.naming(naming)
+			.sidebar(sidebar)
+			.pick();
 	}
 	/*
 	 * We will provide static methods only for simple cases where we use default toString() naming.

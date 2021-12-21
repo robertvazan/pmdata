@@ -2,7 +2,6 @@
 package com.machinezoo.pmdata.widgets;
 
 import java.util.*;
-import java.util.function.*;
 import com.machinezoo.noexception.*;
 import com.machinezoo.pmsite.*;
 import com.machinezoo.pushmode.dom.*;
@@ -29,6 +28,17 @@ public class SidebarLayout {
 	private final SiteFragment right;
 	public SiteFragment right() {
 		return right;
+	}
+	public SiteFragment in(Sidebar sidebar) {
+		if (sidebar == null)
+			return SiteFragment.get();
+		switch (sidebar) {
+		case MAIN: return main;
+		case LEFT: return left;
+		case RIGHT: return right;
+		default:
+			throw new IllegalArgumentException();
+		}
 	}
 	private SidebarLayout(SiteFragment main, SiteFragment left, SiteFragment right) {
 		this.main = main;
@@ -101,15 +111,5 @@ public class SidebarLayout {
 			scope.close();
 			render();
 		};
-	}
-	public static <T> T supplyLeft(Supplier<T> supplier) {
-		try (var scope = SidebarLayout.get().left().open()) {
-			return supplier.get();
-		}
-	}
-	public static <T> T supplyRight(Supplier<T> supplier) {
-		try (var scope = SidebarLayout.get().right().open()) {
-			return supplier.get();
-		}
 	}
 }

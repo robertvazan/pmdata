@@ -47,8 +47,13 @@ public class ContentLabel {
 			.add(content);
 		return this;
 	}
+	private Sidebar sidebar;
+	public ContentLabel sidebar(Sidebar sidebar) {
+		this.sidebar = sidebar;
+		return this;
+	}
 	public void render() {
-		var fragment = SiteFragment.get();
+		var fragment = SidebarLayout.current().map(l -> l.in(sidebar)).orElseGet(SiteFragment::get);
 		/*
 		 * Allow null label to signal optional display of content without any label.
 		 */

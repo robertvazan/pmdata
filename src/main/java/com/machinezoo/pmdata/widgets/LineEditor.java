@@ -33,9 +33,15 @@ public class LineEditor {
 		this.fallback = fallback;
 		return this;
 	}
+	private Sidebar sidebar;
+	public LineEditor sidebar(Sidebar sidebar) {
+		this.sidebar = sidebar;
+		return this;
+	}
 	public String edit() {
 		var binding = this.binding != null ? this.binding : StringBinding.of(title);
 		new ContentLabel(title)
+			.sidebar(sidebar)
 			.add(Html.input()
 				.clazz("line-editor")
 				.id(SiteFragment.get().elementId(title))

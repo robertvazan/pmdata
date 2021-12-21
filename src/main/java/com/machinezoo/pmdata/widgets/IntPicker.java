@@ -43,6 +43,26 @@ public class IntPicker {
 	public IntPicker range(int start, int end) {
 		return add(IntStream.range(start, end));
 	}
+	public IntPicker rangeClosed(int start, int end) {
+		return add(IntStream.rangeClosed(start, end));
+	}
+	public IntPicker() {
+	}
+	public IntPicker(String title) {
+		this.title = title;
+	}
+	public IntPicker(String title, IntStream items) {
+		this.title = title;
+		add(items);
+	}
+	public IntPicker(String title, int... items) {
+		this.title = title;
+		add(items);
+	}
+	public IntPicker(String title, IntCollection items) {
+		this.title = title;
+		add(items);
+	}
 	private IntBinding binding;
 	public IntPicker binding(IntBinding binding) {
 		this.binding = binding;
@@ -58,28 +78,38 @@ public class IntPicker {
 		this.naming = naming;
 		return this;
 	}
-	public int render() {
+	private Sidebar sidebar;
+	public IntPicker sidebar(Sidebar sidebar) {
+		this.sidebar = sidebar;
+		return this;
+	}
+	public int pick() {
 		if (items.isEmpty())
 			throw new IllegalStateException("Picker must have at least one item.");
 		List<Integer> list = items.intStream().boxed().collect(toList());
 		var fallback = this.fallback != null ? this.fallback : list.get(0);
 		var binding = this.binding != null ? this.binding : IntBinding.of(title);
-		return new ItemPicker<Integer>().title(title).add(list).fallback(fallback).binding(binding.asData()).naming(n -> naming.apply(n)).pick();
+		return new ItemPicker<Integer>(title, list)
+			.fallback(fallback)
+			.binding(binding.asData())
+			.naming(n -> naming.apply(n))
+			.sidebar(sidebar)
+			.pick();
 	}
 	/*
 	 * Integers are rarely picked raw (sliders serve this purpose better), so only stringer overloads make sense.
 	 * While range overloads are going to be used more often, array overloads need to be provided for the general case.
 	 */
-	public static int pickInt(String title, int[] items, int fallback, IntFunction<String> naming) {
-		return new IntPicker().title(title).add(items).fallback(fallback).naming(naming).render();
+	public static int pick(String title, int[] items, int fallback, IntFunction<String> naming) {
+		return new IntPicker().title(title).add(items).fallback(fallback).naming(naming).pick();
 	}
-	public static int pickInt(String title, int[] items, IntFunction<String> naming) {
-		return new IntPicker().title(title).add(items).naming(naming).render();
+	public static int pick(String title, int[] items, IntFunction<String> naming) {
+		return new IntPicker().title(title).add(items).naming(naming).pick();
 	}
-	public static int pickInt(String title, int start, int end, int fallback, IntFunction<String> naming) {
-		return new IntPicker().title(title).range(start, end).fallback(fallback).naming(naming).render();
+	public static int pick(String title, int start, int end, int fallback, IntFunction<String> naming) {
+		return new IntPicker().title(title).range(start, end).fallback(fallback).naming(naming).pick();
 	}
-	public static int pickInt(String title, int start, int end, IntFunction<String> naming) {
-		return new IntPicker().title(title).range(start, end).naming(naming).render();
+	public static int pick(String title, int start, int end, IntFunction<String> naming) {
+		return new IntPicker().title(title).range(start, end).naming(naming).pick();
 	}
 }

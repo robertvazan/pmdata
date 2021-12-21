@@ -70,6 +70,11 @@ public class OptionalPicker<T> {
 		this.fallback = Optional.ofNullable(fallback);
 		return this;
 	}
+	private Sidebar sidebar;
+	public OptionalPicker<T> sidebar(Sidebar sidebar) {
+		this.sidebar = sidebar;
+		return this;
+	}
 	public Optional<T> pick() {
 		if (fallback.isPresent() && !items.contains(fallback.get()))
 			throw new IllegalStateException("Fallback value must be in the item list.");
@@ -98,6 +103,7 @@ public class OptionalPicker<T> {
 				current = items.stream().filter(v -> naming.apply(v).equals(bound)).findFirst().or(() -> fallback);
 		}
 		new ContentLabel(title)
+			.sidebar(sidebar)
 			.add(Html.ul()
 				.clazz("item-picker")
 				.add(Html.li()

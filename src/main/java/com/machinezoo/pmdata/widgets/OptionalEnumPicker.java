@@ -85,6 +85,11 @@ public class OptionalEnumPicker<T extends Enum<T>> {
 		this.naming = naming;
 		return this;
 	}
+	private Sidebar sidebar;
+	public OptionalEnumPicker<T> sidebar(Sidebar sidebar) {
+		this.sidebar = sidebar;
+		return this;
+	}
 	@SuppressWarnings("unchecked")
 	public Optional<T> pick() {
 		if (clazz == null && fallback.isEmpty() && items.isEmpty())
@@ -95,7 +100,12 @@ public class OptionalEnumPicker<T extends Enum<T>> {
 		var items = !this.items.isEmpty() ? this.items : Arrays.asList(clazz.getEnumConstants());
 		if (binding == null)
 			binding = StringBinding.of(title).asOptionalEnum(clazz);
-		return new OptionalPicker<T>().title(title).add(items).binding(binding).fallback(fallback.orElse(null)).naming(naming).pick();
+		return new OptionalPicker<T>(title, items)
+			.fallback(fallback.orElse(null))
+			.binding(binding)
+			.naming(naming)
+			.sidebar(sidebar)
+			.pick();
 	}
 	public static <T extends Enum<T>> Optional<T> pick(String title, Class<T> clazz) {
 		return new OptionalEnumPicker<T>().title(title).clazz(clazz).pick();

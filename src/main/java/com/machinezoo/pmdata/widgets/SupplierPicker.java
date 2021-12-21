@@ -36,10 +36,16 @@ public class SupplierPicker<T> {
 			fallback = items.stream().map(p -> p.getKey()).filter(l -> l.equals(label)).findFirst().orElseThrow();
 		return this;
 	}
+	private Sidebar sidebar;
+	public SupplierPicker<T> sidebar(Sidebar sidebar) {
+		this.sidebar = sidebar;
+		return this;
+	}
 	public Supplier<T> supplier() {
 		var label = new ItemPicker<String>(title)
 			.add(items.stream().map(p -> p.getKey()))
 			.fallback(fallback)
+			.sidebar(sidebar)
 			.pick();
 		return items.stream().filter(p -> p.getKey().equals(label)).findFirst().get().getValue();
 	}
