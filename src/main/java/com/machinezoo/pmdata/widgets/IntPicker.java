@@ -43,6 +43,9 @@ public class IntPicker {
 	public IntPicker range(int start, int end) {
 		return add(IntStream.range(start, end));
 	}
+	public IntPicker range(int end) {
+		return range(0, end);
+	}
 	public IntPicker rangeClosed(int start, int end) {
 		return add(IntStream.rangeClosed(start, end));
 	}
@@ -78,8 +81,8 @@ public class IntPicker {
 		this.naming = naming;
 		return this;
 	}
-	private Sidebar sidebar;
-	public IntPicker sidebar(Sidebar sidebar) {
+	private boolean sidebar = true;
+	public IntPicker sidebar(boolean sidebar) {
 		this.sidebar = sidebar;
 		return this;
 	}
@@ -98,18 +101,13 @@ public class IntPicker {
 	}
 	/*
 	 * Integers are rarely picked raw (sliders serve this purpose better), so only stringer overloads make sense.
-	 * While range overloads are going to be used more often, array overloads need to be provided for the general case.
+	 * Range overloads are not provided, because it would not be clear whether open or closed range is requested.
+	 * Items are placed at the end in order to support ellipsis syntax.
 	 */
-	public static int pick(String title, int[] items, int fallback, IntFunction<String> naming) {
+	public static int pick(String title, int fallback, IntFunction<String> naming, int... items) {
 		return new IntPicker().title(title).add(items).fallback(fallback).naming(naming).pick();
 	}
-	public static int pick(String title, int[] items, IntFunction<String> naming) {
+	public static int pick(String title, IntFunction<String> naming, int... items) {
 		return new IntPicker().title(title).add(items).naming(naming).pick();
-	}
-	public static int pick(String title, int start, int end, int fallback, IntFunction<String> naming) {
-		return new IntPicker().title(title).range(start, end).fallback(fallback).naming(naming).pick();
-	}
-	public static int pick(String title, int start, int end, IntFunction<String> naming) {
-		return new IntPicker().title(title).range(start, end).naming(naming).pick();
 	}
 }

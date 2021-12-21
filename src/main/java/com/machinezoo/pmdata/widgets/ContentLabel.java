@@ -47,8 +47,8 @@ public class ContentLabel {
 			.add(content);
 		return this;
 	}
-	private Sidebar sidebar;
-	public ContentLabel sidebar(Sidebar sidebar) {
+	private boolean sidebar;
+	public ContentLabel sidebar(boolean sidebar) {
 		this.sidebar = sidebar;
 		return this;
 	}

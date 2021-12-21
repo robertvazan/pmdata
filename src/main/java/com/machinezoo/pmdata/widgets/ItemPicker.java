@@ -80,8 +80,8 @@ public class ItemPicker<T> {
 		this.fallback = fallback;
 		return this;
 	}
-	private Sidebar sidebar;
-	public ItemPicker<T> sidebar(Sidebar sidebar) {
+	private boolean sidebar = true;
+	public ItemPicker<T> sidebar(boolean sidebar) {
 		this.sidebar = sidebar;
 		return this;
 	}

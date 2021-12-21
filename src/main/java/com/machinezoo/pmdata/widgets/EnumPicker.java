@@ -81,8 +81,8 @@ public class EnumPicker<T extends Enum<T>> {
 		this.naming = naming;
 		return this;
 	}
-	private Sidebar sidebar;
-	public EnumPicker<T> sidebar(Sidebar sidebar) {
+	private boolean sidebar = true;
+	public EnumPicker<T> sidebar(boolean sidebar) {
 		this.sidebar = sidebar;
 		return this;
 	}

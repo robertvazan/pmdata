@@ -70,8 +70,8 @@ public class OptionalPicker<T> {
 		this.fallback = Optional.ofNullable(fallback);
 		return this;
 	}
-	private Sidebar sidebar;
-	public OptionalPicker<T> sidebar(Sidebar sidebar) {
+	private boolean sidebar = true;
+	public OptionalPicker<T> sidebar(boolean sidebar) {
 		this.sidebar = sidebar;
 		return this;
 	}

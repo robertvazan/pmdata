@@ -33,8 +33,8 @@ public class LineEditor {
 		this.fallback = fallback;
 		return this;
 	}
-	private Sidebar sidebar;
-	public LineEditor sidebar(Sidebar sidebar) {
+	private boolean sidebar = true;
+	public LineEditor sidebar(boolean sidebar) {
 		this.sidebar = sidebar;
 		return this;
 	}

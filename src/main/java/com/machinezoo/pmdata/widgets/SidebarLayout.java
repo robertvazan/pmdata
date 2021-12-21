@@ -8,12 +8,10 @@ import com.machinezoo.pushmode.dom.*;
 import com.machinezoo.stagean.*;
 
 /*
- * Simple API that allows throwing widgets to the left and right of the main content.
+ * Simple API that allows throwing widgets in a sidebar next to the main content.
  * This is intended to make good use of horizontally oriented displays.
  * It will fall back to vertical layout on small screens.
- * 
- * There's currently no support for left-only or right-only layout as that adds a lot of complexity.
- * Wide content (tables) in the main column will have scrollbar if it supports one.
+ * Wide main content (tables) will have scrollbar if it supports one.
  */
 @DraftApi
 public class SidebarLayout {
@@ -21,32 +19,19 @@ public class SidebarLayout {
 	public SiteFragment main() {
 		return main;
 	}
-	private final SiteFragment left;
-	public SiteFragment left() {
-		return left;
+	private final SiteFragment sidebar;
+	public SiteFragment sidebar() {
+		return sidebar;
 	}
-	private final SiteFragment right;
-	public SiteFragment right() {
-		return right;
+	public SiteFragment in(boolean sidebar) {
+		return sidebar ? this.sidebar : main;
 	}
-	public SiteFragment in(Sidebar sidebar) {
-		if (sidebar == null)
-			return SiteFragment.get();
-		switch (sidebar) {
-		case MAIN: return main;
-		case LEFT: return left;
-		case RIGHT: return right;
-		default:
-			throw new IllegalArgumentException();
-		}
-	}
-	private SidebarLayout(SiteFragment main, SiteFragment left, SiteFragment right) {
+	private SidebarLayout(SiteFragment main, SiteFragment sidebar) {
 		this.main = main;
-		this.left = left;
-		this.right = right;
+		this.sidebar = sidebar;
 	}
 	private SidebarLayout(SiteFragment parent) {
-		this(parent.isolate(), parent.isolate(), parent.isolate());
+		this(parent.isolate(), parent.isolate());
 	}
 	public SidebarLayout() {
 		this(SiteFragment.get());
@@ -62,7 +47,7 @@ public class SidebarLayout {
 		 * This happens when sidebar layout is hidden below nested fragment.
 		 * Returning the sidebar layout in this situation would allow widgets to escape isolation.
 		 */
-		if (fragment != layout.main && fragment != layout.left && fragment != layout.right)
+		if (fragment != layout.main && fragment != layout.sidebar)
 			return Optional.empty();
 		return Optional.of(layout);
 	}
@@ -74,7 +59,7 @@ public class SidebarLayout {
 			 * This will cause widgets to render into current SiteFragment instead.
 			 */
 			var fragment = SiteFragment.get();
-			return new SidebarLayout(fragment, fragment, fragment);
+			return new SidebarLayout(fragment, fragment);
 		});
 	}
 	public CloseableScope open() {
@@ -90,20 +75,13 @@ public class SidebarLayout {
 		SiteFragment.get().add(Html.div()
 			.clazz("sidebar-container")
 			.add(Html.div()
-				.clazz("sidebar-left")
-				.add(Html.div()
-					.clazz("sidebar-left-box")
-					.add(left.content())))
-			.add(Html.div()
-				.clazz("sidebar-right")
-				.add(Html.div()
-					.clazz("sidebar-right-box")
-					.add(right.content())))
+				.clazz("sidebar-itself")
+				.add(sidebar.content()))
 			.add(Html.div()
 				.clazz("sidebar-main")
-				.add(Html.div()
-					.clazz("sidebar-main-box")
-					.add(main.content()))));
+				.add(main.content()))
+			.add(Html.div()
+				.clazz("sidebar-counterbalance")));
 	}
 	public CloseableScope define() {
 		var scope = open();

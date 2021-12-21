@@ -85,8 +85,8 @@ public class OptionalEnumPicker<T extends Enum<T>> {
 		this.naming = naming;
 		return this;
 	}
-	private Sidebar sidebar;
-	public OptionalEnumPicker<T> sidebar(Sidebar sidebar) {
+	private boolean sidebar = true;
+	public OptionalEnumPicker<T> sidebar(boolean sidebar) {
 		this.sidebar = sidebar;
 		return this;
 	}

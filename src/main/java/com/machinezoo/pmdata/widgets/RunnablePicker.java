@@ -35,8 +35,8 @@ public class RunnablePicker implements Runnable {
 			fallback = items.stream().map(p -> p.getKey()).filter(l -> l.equals(label)).findFirst().orElseThrow();
 		return this;
 	}
-	private Sidebar sidebar;
-	public RunnablePicker sidebar(Sidebar sidebar) {
+	private boolean sidebar = true;
+	public RunnablePicker sidebar(boolean sidebar) {
 		this.sidebar = sidebar;
 		return this;
 	}

@@ -360,6 +360,7 @@ main > article tr:nth-last-child(1) > td.maybe, main > article tr:nth-last-child
 	padding: 0 10px;
 	max-width: 804px;
 	margin: -2px auto;
+	margin-bottom: 10px;
 }
 .item-picker > li {
 	padding: 2px;
@@ -415,40 +416,39 @@ main > article tr:nth-last-child(1) > td.maybe, main > article tr:nth-last-child
 .button-row button:hover {
 	background: #abf;
 }
-@media (min-width: 1600px) {
+@media (min-width: 1550px) {
 	.sidebar-container {
 		display: flex;
 		margin: 30px 0;
+		justify-content: center;
+		align-items: start;
+	}
+	.sidebar-itself {
+		flex-basis: 350px;
+		flex-grow: 1;
+		flex-shrink: 0;
+		max-width: 600px;
+		margin: 0 10px;
+		background: #fafafa;
+		border: 1px solid #ddd;
+		box-sizing: border-box;
+	}
+	.sidebar-counterbalance {
+		flex-basis: 370px;
+		flex-grow: 1;
+		flex-shrink: 1;
+		max-width: 620px;
 	}
 	.sidebar-main {
-		/* Leave some extra space for content slightly wider than 800px, for example image with border box. */
-		width: 810px;
-		display: flex;
-		justify-content: center;
+		flex-basis: 800px;
+		flex-grow: 0;
 		flex-shrink: 0;
+		max-width: calc(100% - 370px);
 	}
-	.sidebar-left, .sidebar-right {
-		flex-grow: 1;
-		flex-basis: 0;
-		display: flex;
-	}
-	.sidebar-left {
-		justify-content: right;
-	}
-	.sidebar-right {
-		justify-content: left;
-	}
-	.sidebar-right {
-		order: 2;
-	}
-	.sidebar-main-box > :first-child, .sidebar-main-box > :first-child > :first-child,
-	.sidebar-left-box > :first-child, .sidebar-left-box > :first-child > :first-child,
-	.sidebar-right-box > :first-child, .sidebar-right-box > :first-child > :first-child {
+	.sidebar-main > :first-child, .sidebar-main > :first-child > :first-child {
 		margin-top: 0;
 	}
-	.sidebar-main-box > :last-child, .sidebar-main-box > :last-child > :last-child,
-	.sidebar-left-box > :last-child, .sidebar-left-box > :last-child > :last-child,
-	.sidebar-right-box > :last-child, .sidebar-right-box > :last-child > :last-child {
+	.sidebar-main > :last-child, .sidebar-main > :last-child > :last-child {
 		margin-bottom: 0;
 	}
 }

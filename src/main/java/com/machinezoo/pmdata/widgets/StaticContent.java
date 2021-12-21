@@ -54,8 +54,8 @@ public class StaticContent {
 		this.tone = tone;
 		return this;
 	}
-	private Sidebar sidebar;
-	public StaticContent sidebar(Sidebar sidebar) {
+	private boolean sidebar = true;
+	public StaticContent sidebar(boolean sidebar) {
 		this.sidebar = sidebar;
 		return this;
 	}
