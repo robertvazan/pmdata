@@ -140,11 +140,24 @@ main > article figcaption {
 }
 main > article img, main > article svg {
 	display: block;
-	max-width: calc(100% - 2px);
+	/* We could shrink images with max-width and max-height, but object-fit is the only way to enlarge small images. */
+	object-fit: contain;
+	width: auto;
 	height: auto;
-	border: 1px solid #ddd;
+	max-width: calc(100% - 2px);
 	margin: 20px auto;
+	/* Borders do not work with object-fit. We will emulate border with drop-shadow instead. */
+	/* https://fvsch.com/object-fit-decoration */
+	filter: drop-shadow(0 0 1px #0008);
 }
+@media (min-height: 600px) {
+	main > article img, main > article svg {
+		/* Leave some space for horizontal scrollbar if there is any. */
+		max-height: calc(100vh - 30px);
+	}
+}
+/* We could use max-width alone to shrink large images, but width + max-width is the only way to enlarge small images. */
+/* Forcing minimum width is also the only way to use extra space inside sidebar main area. */
 main > article .image-50 {
 	width: 400px;
 }
@@ -424,9 +437,11 @@ main > article tr:nth-last-child(1) > td.maybe, main > article tr:nth-last-child
 		align-items: start;
 	}
 	.sidebar-itself {
+		/* Minimum size 350px is wide enough for most pickers. */
 		flex-basis: 350px;
 		flex-grow: 1;
 		flex-shrink: 0;
+		/* Maximum size 600px will use all free space at FullHD resolution. */
 		max-width: 600px;
 		margin: 0 10px;
 		background: #fafafa;
@@ -434,13 +449,18 @@ main > article tr:nth-last-child(1) > td.maybe, main > article tr:nth-last-child
 		box-sizing: border-box;
 	}
 	.sidebar-counterbalance {
+		/* Extra 20px to account for sidebar's 2x10px margin. */
 		flex-basis: 370px;
 		flex-grow: 1;
+		/* Shrink to make space for oversized main content. */
 		flex-shrink: 1;
+		/* Extra 20px to account for sidebar's 2x10px margin. */
 		max-width: 620px;
 	}
 	.sidebar-main {
 		flex-basis: 800px;
+		/* Don't grow unless forced to. This ensures the sidebar will be next to the main content. */
+		/* The downside is that this applies sizing pressure on content. Images have an exception below. Tables will be forced to wrap lines. */
 		flex-grow: 0;
 		flex-shrink: 0;
 		max-width: calc(100% - 370px);
@@ -450,5 +470,10 @@ main > article tr:nth-last-child(1) > td.maybe, main > article tr:nth-last-child
 	}
 	.sidebar-main > :last-child, .sidebar-main > :last-child > :last-child {
 		margin-bottom: 0;
+	}
+	.sidebar-main img, .sidebar-main svg {
+		/* Default max-width for images uses 100%, which will always be 800px inside sidebar main area. */
+		/* Extra 30px for vertical scrollbar and image border. */
+		max-width: calc(100vw - 400px);
 	}
 }
