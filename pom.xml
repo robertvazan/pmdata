@@ -47,7 +47,7 @@
 		<dependency>
 			<groupId>com.machinezoo.pmsite</groupId>
 			<artifactId>pmsite</artifactId>
-			<version>0.16.1</version>
+			<version>0.17.0</version>
 		</dependency>
 		<dependency>
 			<groupId>one.util</groupId>
@@ -71,10 +71,10 @@
 			<artifactId>jfreechart</artifactId>
 			<version>1.5.3</version>
 		</dependency>
+		<!-- Batik is used to render charts into SVG. -->
 		<dependency>
-			<!-- Used to render charts into SVG. -->
 			<groupId>org.apache.xmlgraphics</groupId>
-			<artifactId>batik-all</artifactId>
+			<artifactId>batik-dom</artifactId>
 			<version>1.14</version>
 			<exclusions>
 				<exclusion>
@@ -84,6 +84,16 @@
 					<artifactId>xml-apis</artifactId>
 				</exclusion>
 			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.xmlgraphics</groupId>
+			<artifactId>batik-svggen</artifactId>
+			<version>1.14</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.xmlgraphics</groupId>
+			<artifactId>batik-awt-util</artifactId>
+			<version>1.14</version>
 		</dependency>
 		<dependency>
 			<groupId>com.github.haifengl</groupId>
@@ -109,14 +119,15 @@
 		<pluginManagement>
 			<plugins>
 				<plugin>
-					<!-- Older surefire versions did not support JUnit 5. -->
-					<artifactId>maven-surefire-plugin</artifactId>
-					<version>2.22.2</version>
+					<!-- Needed for Java 11+. -->
+					<!-- Contains fix for https://issues.apache.org/jira/browse/MCOMPILER-289 -->
+					<artifactId>maven-compiler-plugin</artifactId>
+					<version>3.8.1</version>
 				</plugin>
 				<plugin>
-					<!-- Needed for Java 11. -->
-					<artifactId>maven-compiler-plugin</artifactId>
-					<version>3.6.2</version>
+					<!-- Needed for Java 17. -->
+					<artifactId>maven-surefire-plugin</artifactId>
+					<version>3.0.0-M5</version>
 				</plugin>
 			</plugins>
 		</pluginManagement>
@@ -166,6 +177,9 @@
 					<notimestamp>true</notimestamp>
 					<!-- The library is not yet fully documented. -->
 					<doclint>all,-missing</doclint>
+					<bottom>
+						<![CDATA[<!-- No copyright message. -->]]>
+					</bottom>
 				</configuration>
 				<executions>
 					<execution>
