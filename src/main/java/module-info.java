@@ -28,6 +28,7 @@ module com.machinezoo.pmdata {
 	requires transitive com.machinezoo.pmsite;
 	/*
 	 * Transitive, because kryo configuration is exposed via ThreadLocalKryo.
+	 * There should be a better solution for this.
 	 */
 	requires transitive com.esotericsoftware.kryo;
 	requires com.google.common;
@@ -56,4 +57,12 @@ module com.machinezoo.pmdata {
 	requires batik.dom;
 	requires batik.svggen;
 	requires batik.awt.util;
+	/*
+	 * Predefined CSS in resources.
+	 */
+	opens com.machinezoo.pmdata to com.machinezoo.pmsite;
+	/*
+	 * JSON descriptors of caches.
+	 */
+	opens com.machinezoo.pmdata.caching to com.google.gson;
 }
