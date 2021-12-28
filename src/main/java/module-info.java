@@ -33,7 +33,6 @@ module com.machinezoo.pmdata {
 	requires transitive com.esotericsoftware.kryo;
 	requires com.google.common;
 	requires com.google.gson;
-	requires com.ning.compress.lzf;
 	requires it.unimi.dsi.fastutil;
 	requires one.util.streamex;
 	requires org.apache.commons.collections4;

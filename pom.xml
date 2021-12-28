@@ -59,12 +59,6 @@
 			<version>5.2.0</version>
 		</dependency>
 		<dependency>
-			<!-- Compression of kryo-serialized caches. -->
-			<groupId>com.ning</groupId>
-			<artifactId>compress-lzf</artifactId>
-			<version>1.1</version>
-		</dependency>
-		<dependency>
 			<groupId>org.jfree</groupId>
 			<artifactId>jfreechart</artifactId>
 			<version>1.5.3</version>
