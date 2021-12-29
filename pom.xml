@@ -68,14 +68,6 @@
 			<groupId>org.apache.xmlgraphics</groupId>
 			<artifactId>batik-dom</artifactId>
 			<version>1.14</version>
-			<exclusions>
-				<exclusion>
-					<!-- This is probably some old version that conflicts with newer module-based 
-						one as far as I remember. -->
-					<groupId>xml-apis</groupId>
-					<artifactId>xml-apis</artifactId>
-				</exclusion>
-			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.xmlgraphics</groupId>
