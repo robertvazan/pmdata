@@ -141,8 +141,7 @@ public class DataWidgets {
 			if (DomContent.class.isAssignableFrom(method.getReturnType()))
 				consumer = r -> SiteFragment.get().add((DomContent)r);
 			else if (method.getReturnType() == void.class) {
-				consumer = r -> {
-				};
+				consumer = r -> {};
 			} else
 				throw new IllegalArgumentException("Unsupported return type: " + method.getReturnType());
 		}
