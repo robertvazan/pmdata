@@ -1,5 +1,7 @@
 // Part of PMData: https://pmdata.machinezoo.com
-@com.machinezoo.stagean.NoTests
-@com.machinezoo.stagean.NoDocs
-@com.machinezoo.stagean.DraftApi
+@NoTests
+@NoDocs
+@DraftApi
 package com.machinezoo.pmdata.caching;
+
+import com.machinezoo.stagean.*;

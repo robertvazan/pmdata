@@ -73,7 +73,10 @@ public class DataWidgets {
 		.expireAfterAccess(1, TimeUnit.MINUTES)
 		.maximumSize(100)
 		.build();
-	@DraftCode("configurable cache")
+	@DraftCode
+	@CodeIssue("Configurable caching of rendered widget.")
+	@CodeIssue("Cache report should be shown out of band in order to support inline widgets and inheriting attributes from XML (esp. class).")
+	@CodeIssue("Cache ignores changes in XML attributes / method parameters.")
 	private static SiteFragment assemble(SiteFragment.Key key, Runnable runnable) {
 		var fragment = SiteFragment.forKey(key);
 		try (var scope = fragment.open()) {
