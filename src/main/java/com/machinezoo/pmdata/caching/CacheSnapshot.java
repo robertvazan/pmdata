@@ -108,7 +108,7 @@ public class CacheSnapshot {
 		try {
 			var saved = new Gson().fromJson(Files.readString(json), Saved.class);
 			var snapshot = new CacheSnapshot(owner);
-			snapshot.path = Path.of(saved.path);
+			snapshot.path = saved.path != null ? Path.of(saved.path) : null;
 			snapshot.exception = saved.exception;
 			snapshot.cancelled = saved.cancelled;
 			Objects.requireNonNull(saved.input);
