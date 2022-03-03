@@ -46,7 +46,7 @@ public class NumberFormatter implements DoubleValueFormatter {
 			for (int i = -1; i < BIG_PREFIXES.length; ++i)
 				for (int j = 0; j < 3; ++j)
 					if (value < Math.pow(10, 3 * i + j + 4))
-						return format.format(Math.pow(0.001, i + 1) * value) + " " + (i >= 0 ? BIG_PREFIXES[i] : "");
+						return format.format(Math.pow(0.001, i + 1) * value) + (i >= 0 ? " " + BIG_PREFIXES[i] : "");
 			return new ScientificFormatter().plain(value);
 		} else {
 			if (value >= Math.pow(0.1, 4))
