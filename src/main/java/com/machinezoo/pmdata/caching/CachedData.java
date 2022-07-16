@@ -5,7 +5,9 @@ import java.util.*;
 import java.util.concurrent.*;
 import com.google.common.cache.*;
 import com.machinezoo.hookless.*;
+import com.machinezoo.stagean.*;
 
+@CodeIssue("Downgrade softref to weakref after one second. Anything that needs longer caching should be persisted.")
 class CachedData {
 	static final ConcurrentMap<LazyCache<?>, Object> lazy = new ConcurrentHashMap<>();
 	/*
