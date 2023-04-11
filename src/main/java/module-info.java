@@ -10,13 +10,16 @@ module com.machinezoo.pmdata {
 	requires com.machinezoo.stagean;
 	/*
 	 * Transitive, because we return CloseableScope from many methods.
-	 * Transitivity should be removed once CloseableScope is in separate library.
 	 */
-	requires transitive com.machinezoo.noexception;
+	requires transitive com.machinezoo.closeablescope;
+	requires com.machinezoo.noexception;
+	requires com.machinezoo.noexception.slf4j;
+	requires com.machinezoo.hookless;
 	/*
-	 * Transitive, because several classes are used in the API: ReactiveDuration, ReactivePreferences, ...
+	 * Transitive, because we expose reactive time in some APIs.
 	 */
-	requires transitive com.machinezoo.hookless;
+	requires transitive com.machinezoo.hookless.time;
+	requires com.machinezoo.hookless.prefs;
 	requires com.machinezoo.hookless.servlets;
 	/*
 	 * Transitive, because widgets take and return DomContent.

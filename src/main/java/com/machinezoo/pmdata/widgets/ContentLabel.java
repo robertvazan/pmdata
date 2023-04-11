@@ -1,7 +1,7 @@
 // Part of PMData: https://pmdata.machinezoo.com
 package com.machinezoo.pmdata.widgets;
 
-import com.machinezoo.noexception.*;
+import com.machinezoo.closeablescope.*;
 import com.machinezoo.pmsite.*;
 import com.machinezoo.pushmode.dom.*;
 import com.machinezoo.stagean.*;

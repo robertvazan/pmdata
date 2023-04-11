@@ -15,6 +15,7 @@ class Project(scaffold.Java):
     
     def dependencies(self):
         yield from super().dependencies()
+        yield self.use_hookless_time()
         yield self.use_pmsite()
         yield self.use_streamex()
         # Used to serialize cache content output.

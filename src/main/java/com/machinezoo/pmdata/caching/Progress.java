@@ -5,7 +5,7 @@ import java.lang.reflect.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.*;
-import com.machinezoo.noexception.*;
+import com.machinezoo.closeablescope.*;
 import one.util.streamex.*;
 
 /*

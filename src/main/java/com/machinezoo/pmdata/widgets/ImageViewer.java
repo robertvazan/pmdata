@@ -11,6 +11,7 @@ import javax.imageio.*;
 import javax.imageio.plugins.jpeg.*;
 import javax.imageio.stream.*;
 import com.machinezoo.noexception.*;
+import com.machinezoo.noexception.slf4j.*;
 import com.machinezoo.pmsite.*;
 import com.machinezoo.pushmode.dom.*;
 import com.machinezoo.stagean.*;
@@ -53,33 +54,33 @@ public class ImageViewer {
 	 */
 	private static final Pattern viewboxRe = Pattern.compile("<svg[^>]* viewBox=\"[-0-9.]+ [-0-9.]+ ([0-9]+)(?:\\.0)? ([0-9]+)(?:\\.0)?\"");
 	private static Dimension size(byte[] image) {
-		return Exceptions.log().get(Exceptions.sneak().supplier(() -> {
+		return ExceptionLogging.log().get(Exceptions.sneak().supplier(() -> {
 			switch (mime(image)) {
-			case "image/png":
-			case "image/jpeg":
-				// https://stackoverflow.com/a/1560052/1981276
-				try (ImageInputStream in = new MemoryCacheImageInputStream(new ByteArrayInputStream(image))) {
-					var readers = ImageIO.getImageReaders(in);
-					if (readers.hasNext()) {
-						var reader = readers.next();
-						try {
-							reader.setInput(in);
-							return new Dimension(reader.getWidth(0), reader.getHeight(0));
-						} finally {
-							reader.dispose();
+				case "image/png":
+				case "image/jpeg":
+					// https://stackoverflow.com/a/1560052/1981276
+					try (ImageInputStream in = new MemoryCacheImageInputStream(new ByteArrayInputStream(image))) {
+						var readers = ImageIO.getImageReaders(in);
+						if (readers.hasNext()) {
+							var reader = readers.next();
+							try {
+								reader.setInput(in);
+								return new Dimension(reader.getWidth(0), reader.getHeight(0));
+							} finally {
+								reader.dispose();
+							}
 						}
 					}
-				}
-				break;
-			case "image/svg+xml":
-				/*
-				 * Examine up to one kilobyte, because JFreeChart precedes viewBox attribute with lengthy style attribute.
-				 */
-				var header = new String(Arrays.copyOf(image, Math.min(image.length, 1000)), StandardCharsets.UTF_8);
-				var matcher = viewboxRe.matcher(header);
-				if (matcher.find())
-					return new Dimension(Integer.parseInt(matcher.group(1)), Integer.parseInt(matcher.group(2)));
-				break;
+					break;
+				case "image/svg+xml":
+					/*
+					 * Examine up to one kilobyte, because JFreeChart precedes viewBox attribute with lengthy style attribute.
+					 */
+					var header = new String(Arrays.copyOf(image, Math.min(image.length, 1000)), StandardCharsets.UTF_8);
+					var matcher = viewboxRe.matcher(header);
+					if (matcher.find())
+						return new Dimension(Integer.parseInt(matcher.group(1)), Integer.parseInt(matcher.group(2)));
+					break;
 			}
 			return null;
 		})).orElse(null);
@@ -137,8 +138,8 @@ public class ImageViewer {
 		 * Convert formats that aren't directly supported by browsers.
 		 */
 		switch (mime(image)) {
-		case "image/tiff":
-			image = toJpeg(image);
+			case "image/tiff":
+				image = toJpeg(image);
 		}
 		var img = Html.img();
 		var size = size(image);

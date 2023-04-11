@@ -1,7 +1,7 @@
 // Part of PMData: https://pmdata.machinezoo.com
 package com.machinezoo.pmdata.widgets;
 
-import com.machinezoo.noexception.*;
+import com.machinezoo.closeablescope.*;
 import com.machinezoo.pmsite.*;
 import com.machinezoo.pushmode.dom.*;
 import com.machinezoo.stagean.*;
@@ -47,9 +47,11 @@ public class Figure {
 		 * If caption is null, inline the content. This allows callers to have content optionally wrapped in figure
 		 * if caption is provided without extra conditions.
 		 */
-		SiteFragment.get().add(caption == null ? content : Html.figure()
-			.add(content)
-			.add(Html.figcaption().add(caption)));
+		SiteFragment.get().add(caption == null
+			? content
+			: Html.figure()
+				.add(content)
+				.add(Html.figcaption().add(caption)));
 	}
 	public CloseableScope define() {
 		/*

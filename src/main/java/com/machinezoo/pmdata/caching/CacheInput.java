@@ -6,8 +6,8 @@ import java.util.*;
 import java.util.function.*;
 import org.slf4j.*;
 import com.google.common.hash.*;
+import com.machinezoo.closeablescope.*;
 import com.machinezoo.hookless.*;
-import com.machinezoo.noexception.*;
 import one.util.streamex.*;
 
 public class CacheInput {

@@ -2,7 +2,7 @@
 package com.machinezoo.pmdata.widgets;
 
 import java.util.*;
-import com.machinezoo.noexception.*;
+import com.machinezoo.closeablescope.*;
 import com.machinezoo.pmsite.*;
 import com.machinezoo.pushmode.dom.*;
 import com.machinezoo.stagean.*;
@@ -40,9 +40,11 @@ public class ContentGroup {
 			.clazz("group")
 			.add(Html.div()
 				.clazz("group-header")
-				.add(title == null ? null : Html.div()
-					.clazz("group-title")
-					.add(title)))
+				.add(title == null
+					? null
+					: Html.div()
+						.clazz("group-title")
+						.add(title)))
 			.add(content));
 	}
 	public CloseableScope define() {

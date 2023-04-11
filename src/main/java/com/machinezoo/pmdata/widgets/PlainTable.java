@@ -5,7 +5,7 @@ import static java.util.stream.Collectors.*;
 import java.util.*;
 import java.util.function.*;
 import java.util.stream.*;
-import com.machinezoo.noexception.*;
+import com.machinezoo.closeablescope.*;
 import com.machinezoo.pmdata.formatters.*;
 import com.machinezoo.pmsite.*;
 import com.machinezoo.pushmode.dom.*;
@@ -201,11 +201,13 @@ public class PlainTable {
 									.mapToObj(r -> Html.tr()
 										.add(IntStream.range(0, columns.size())
 											.mapToObj(c -> cells.get(new CellKey(c, r)))
-											.map(c -> c == null ? Html.td() : Html.td()
-												.clazz(
-													c.alignment != Alignment.CENTER ? "align-" + c.alignment.name().toLowerCase() : null,
-													c.tone != null ? c.tone.css() : null)
-												.add(c.content))))))));
+											.map(c -> c == null
+												? Html.td()
+												: Html.td()
+													.clazz(
+														c.alignment != Alignment.CENTER ? "align-" + c.alignment.name().toLowerCase() : null,
+														c.tone != null ? c.tone.css() : null)
+													.add(c.content))))))));
 			}
 		}
 	}

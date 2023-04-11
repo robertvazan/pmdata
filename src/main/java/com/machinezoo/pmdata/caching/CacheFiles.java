@@ -7,7 +7,9 @@ import java.nio.file.*;
 import java.security.*;
 import java.util.*;
 import com.google.common.hash.*;
+import com.machinezoo.closeablescope.CloseableScope;
 import com.machinezoo.noexception.*;
+import com.machinezoo.noexception.slf4j.*;
 import com.machinezoo.pmsite.utils.*;
 import com.machinezoo.stagean.*;
 
@@ -65,7 +67,7 @@ public class CacheFiles {
 		/*
 		 * Cache files in default directory are transient. Delete them when app restarts.
 		 */
-		Exceptions.log().run(() -> remove(DEFAULT_DESTINATION));
+		ExceptionLogging.log().run(() -> remove(DEFAULT_DESTINATION));
 	}
 	private static final ThreadLocal<Path> current = new ThreadLocal<>();
 	public static Path destination() {
