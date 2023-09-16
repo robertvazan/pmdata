@@ -1,11 +1,6 @@
 // Part of PMData: https://pmdata.machinezoo.com
 module com.machinezoo.pmdata {
-	exports com.machinezoo.pmdata;
-	exports com.machinezoo.pmdata.caching;
-	exports com.machinezoo.pmdata.bindings;
 	exports com.machinezoo.pmdata.formatters;
-	exports com.machinezoo.pmdata.widgets;
-	exports com.machinezoo.pmdata.charts;
 	requires java.desktop;
 	requires com.machinezoo.stagean;
 	/*
@@ -59,12 +54,4 @@ module com.machinezoo.pmdata {
 	requires batik.dom;
 	requires batik.svggen;
 	requires batik.awt.util;
-	/*
-	 * Predefined CSS in resources.
-	 */
-	opens com.machinezoo.pmdata to com.machinezoo.pmsite;
-	/*
-	 * JSON descriptors of caches.
-	 */
-	opens com.machinezoo.pmdata.caching to com.google.gson;
 }
