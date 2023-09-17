@@ -1,5 +1,5 @@
-// Part of PMData: https://pmdata.machinezoo.com
-package com.machinezoo.pmdata.formatters;
+// Part of Ladybug Formatters: https://ladybugformatters.machinezoo.com/
+package com.machinezoo.ladybugformatters;
 
 import java.time.*;
 import com.machinezoo.pushmode.dom.*;

@@ -1,6 +1,6 @@
-// Part of PMData: https://pmdata.machinezoo.com
-module com.machinezoo.pmdata {
-    exports com.machinezoo.pmdata.formatters;
+// Part of Ladybug Formatters: https://ladybugformatters.machinezoo.com/
+module com.machinezoo.ladybugformatters {
+    exports com.machinezoo.ladybugformatters;
     requires com.machinezoo.stagean;
     /*
      * Transitive, because we have reactive time formatters.

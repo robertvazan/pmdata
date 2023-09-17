@@ -5,10 +5,10 @@ import rvscaffold as scaffold
 
 class Project(scaffold.Java):
     def script_path_text(self): return __file__
-    def repository_name(self): return 'pmdata'
-    def pretty_name(self): return 'PMData'
-    def pom_description(self): return "Framework for reactive data-driven and data science websites."
-    def inception_year(self): return 2020
+    def repository_name(self): return 'ladybugformatters'
+    def pretty_name(self): return 'Ladybug Formatters'
+    def pom_description(self): return "Collection of convenient formatters for projects using hookless and pushmode."
+    def inception_year(self): return 2023
     def jdk_version(self): return 17
     def has_javadoc(self): return False
     def stagean_annotations(self): return True

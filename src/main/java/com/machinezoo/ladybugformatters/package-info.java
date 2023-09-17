@@ -1,4 +1,4 @@
-// Part of PMData: https://pmdata.machinezoo.com
+// Part of Ladybug Formatters: https://ladybugformatters.machinezoo.com/
 /*
  * We don't want to put any unit conversions here. There are dedicated libraries that do it better.
  * We will just take values in some unit and add/remove scaling factors (kilo-, milli-, ...).
@@ -23,4 +23,4 @@
 @com.machinezoo.stagean.NoTests
 @com.machinezoo.stagean.StubDocs
 @com.machinezoo.stagean.DraftApi
-package com.machinezoo.pmdata.formatters;
+package com.machinezoo.ladybugformatters;

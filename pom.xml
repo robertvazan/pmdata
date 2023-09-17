@@ -3,20 +3,20 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>com.machinezoo.pmdata</groupId>
-	<artifactId>pmdata</artifactId>
-	<version>0.12.5</version>
+	<groupId>com.machinezoo.ladybugformatters</groupId>
+	<artifactId>ladybugformatters</artifactId>
+	<version>0.0.1</version>
 
-	<name>PMData</name>
-	<description>Framework for reactive data-driven and data science websites.</description>
+	<name>Ladybug Formatters</name>
+	<description>Collection of convenient formatters for projects using hookless and pushmode.</description>
 
-	<url>https://pmdata.machinezoo.com/</url>
-	<inceptionYear>2020</inceptionYear>
+	<url>https://ladybugformatters.machinezoo.com/</url>
+	<inceptionYear>2023</inceptionYear>
 
 	<licenses>
 		<license>
 			<name>Apache-2.0</name>
-			<url>https://github.com/robertvazan/pmdata/blob/master/LICENSE</url>
+			<url>https://github.com/robertvazan/ladybugformatters/blob/master/LICENSE</url>
 		</license>
 	</licenses>
 
@@ -33,9 +33,9 @@
 	</developers>
 
 	<scm>
-		<connection>scm:git:https://github.com/robertvazan/pmdata.git</connection>
-		<developerConnection>scm:git:https://github.com/robertvazan/pmdata.git</developerConnection>
-		<url>https://github.com/robertvazan/pmdata</url>
+		<connection>scm:git:https://github.com/robertvazan/ladybugformatters.git</connection>
+		<developerConnection>scm:git:https://github.com/robertvazan/ladybugformatters.git</developerConnection>
+		<url>https://github.com/robertvazan/ladybugformatters</url>
 	</scm>
 
 	<properties>

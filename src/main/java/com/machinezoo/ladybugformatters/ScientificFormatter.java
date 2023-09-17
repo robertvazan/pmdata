@@ -1,5 +1,5 @@
-// Part of PMData: https://pmdata.machinezoo.com
-package com.machinezoo.pmdata.formatters;
+// Part of Ladybug Formatters: https://ladybugformatters.machinezoo.com/
+package com.machinezoo.ladybugformatters;
 
 import static java.util.stream.Collectors.*;
 import java.text.*;
