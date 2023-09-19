@@ -2,7 +2,7 @@
 package com.machinezoo.pmdata.widgets;
 
 import com.machinezoo.closeablescope.*;
-import com.machinezoo.pmdata.formatters.*;
+import com.machinezoo.ladybugformatters.*;
 import com.machinezoo.pmsite.*;
 import com.machinezoo.pushmode.dom.*;
 import com.machinezoo.stagean.*;
