@@ -3,7 +3,7 @@
 
 # PMData
 
-[![Maven Central](https://img.shields.io/maven-central/v/com.machinezoo.pmdata/pmdata)](https://search.maven.org/artifact/com.machinezoo.pmdata/pmdata)
+[![Maven Central](https://img.shields.io/maven-central/v/com.machinezoo.pmdata/pmdata)](https://central.sonatype.com/artifact/com.machinezoo.pmdata/pmdata)
 [![Build status](https://github.com/robertvazan/pmdata/workflows/build/badge.svg)](https://github.com/robertvazan/pmdata/actions/workflows/build.yml)
 [![Test coverage](https://codecov.io/gh/robertvazan/pmdata/branch/master/graph/badge.svg)](https://codecov.io/gh/robertvazan/pmdata)
 
