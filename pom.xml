@@ -3,20 +3,20 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>com.machinezoo.pmdata</groupId>
-	<artifactId>pmdata</artifactId>
-	<version>0.12.5</version>
+	<groupId>com.machinezoo.remorabindings</groupId>
+	<artifactId>remorabindings</artifactId>
+	<version>0.0.1</version>
 
-	<name>PMData</name>
-	<description>Framework for reactive data-driven and data science websites.</description>
+	<name>Remora Bindings</name>
+	<description>Two-way data bindings used to bind UI widgets to data sources in pushmode apps.</description>
 
-	<url>https://pmdata.machinezoo.com/</url>
-	<inceptionYear>2020</inceptionYear>
+	<url>https://remorabindings.machinezoo.com/</url>
+	<inceptionYear>2023</inceptionYear>
 
 	<licenses>
 		<license>
 			<name>Apache-2.0</name>
-			<url>https://github.com/robertvazan/pmdata/blob/master/LICENSE</url>
+			<url>https://github.com/robertvazan/remorabindings/blob/master/LICENSE</url>
 		</license>
 	</licenses>
 
@@ -33,9 +33,9 @@
 	</developers>
 
 	<scm>
-		<connection>scm:git:https://github.com/robertvazan/pmdata.git</connection>
-		<developerConnection>scm:git:https://github.com/robertvazan/pmdata.git</developerConnection>
-		<url>https://github.com/robertvazan/pmdata</url>
+		<connection>scm:git:https://github.com/robertvazan/remorabindings.git</connection>
+		<developerConnection>scm:git:https://github.com/robertvazan/remorabindings.git</developerConnection>
+		<url>https://github.com/robertvazan/remorabindings</url>
 	</scm>
 
 	<properties>

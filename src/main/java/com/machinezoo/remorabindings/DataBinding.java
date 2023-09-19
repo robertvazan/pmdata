@@ -1,5 +1,5 @@
-// Part of PMData: https://pmdata.machinezoo.com
-package com.machinezoo.pmdata.bindings;
+// Part of Remora Bindings: https://remorabindings.machinezoo.com
+package com.machinezoo.remorabindings;
 
 import java.util.*;
 import java.util.function.*;

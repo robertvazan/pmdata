@@ -1,6 +1,6 @@
-// Part of PMData: https://pmdata.machinezoo.com
-module com.machinezoo.pmdata {
-    exports com.machinezoo.pmdata.bindings;
+// Part of Remora Bindings: https://remorabindings.machinezoo.com
+module com.machinezoo.remorabindings {
+    exports com.machinezoo.remorabindings;
     requires com.machinezoo.stagean;
     requires com.machinezoo.noexception;
     /*
