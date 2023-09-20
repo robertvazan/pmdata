@@ -50,14 +50,24 @@
 			<version>1.3.0</version>
 		</dependency>
 		<dependency>
+			<groupId>com.machinezoo.noexception</groupId>
+			<artifactId>noexception</artifactId>
+			<version>1.9.0</version>
+		</dependency>
+		<dependency>
+			<groupId>com.machinezoo.hookless</groupId>
+			<artifactId>hookless</artifactId>
+			<version>0.16.0</version>
+		</dependency>
+		<dependency>
+			<groupId>com.machinezoo.pushmode</groupId>
+			<artifactId>pushmode</artifactId>
+			<version>0.8.3</version>
+		</dependency>
+		<dependency>
 			<groupId>com.machinezoo.pmsite</groupId>
 			<artifactId>pmsite</artifactId>
 			<version>0.18.6</version>
-		</dependency>
-		<dependency>
-			<groupId>com.machinezoo.ladybugformatters</groupId>
-			<artifactId>ladybugformatters</artifactId>
-			<version>0.1.1</version>
 		</dependency>
 		<dependency>
 			<groupId>com.machinezoo.meerkatwidgets</groupId>
@@ -65,14 +75,24 @@
 			<version>0.1.0</version>
 		</dependency>
 		<dependency>
-			<groupId>one.util</groupId>
-			<artifactId>streamex</artifactId>
-			<version>0.8.1</version>
+			<groupId>com.machinezoo.foxcache</groupId>
+			<artifactId>foxcache</artifactId>
+			<version>0.1.1</version>
 		</dependency>
 		<dependency>
-			<groupId>com.esotericsoftware</groupId>
-			<artifactId>kryo</artifactId>
-			<version>5.2.0</version>
+			<groupId>com.google.guava</groupId>
+			<artifactId>guava</artifactId>
+			<version>32.0.0-jre</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+			<version>3.12.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>1.7.32</version>
 		</dependency>
 		<dependency>
 			<groupId>org.jfree</groupId>

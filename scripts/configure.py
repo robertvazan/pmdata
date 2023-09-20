@@ -15,12 +15,15 @@ class Project(scaffold.Java):
     
     def dependencies(self):
         yield from super().dependencies()
+        yield self.use_noexception()
+        yield self.use_hookless()
+        yield self.use_pushmode()
         yield self.use_pmsite()
-        yield self.use_ladybugformatters()
         yield self.use_meerkatwidgets()
-        yield self.use_streamex()
-        # Used to serialize cache content output.
-        yield self.use('com.esotericsoftware:kryo:5.2.0')
+        yield self.use_foxcache()
+        yield self.use_guava()
+        yield self.use_commons_lang()
+        yield self.use_slf4j()
         yield self.use('org.jfree:jfreechart:1.5.3')
         # Batik is used to render charts into SVG.
         batik_version = '1.14'
@@ -34,7 +37,7 @@ class Project(scaffold.Java):
     def javadoc_links(self):
         yield 'https://stagean.machinezoo.com/javadoc/'
         # PMSite does not have javadoc yet.
-        # JFreeChart and Kryo not linked, because automatic modules are not supported by javadoc.
+        # JFreeChart not linked, because automatic modules are not supported by javadoc.
         # Smile plot not linked, because it is not a module yet.
 
 Project().generate()
