@@ -50,6 +50,21 @@
 			<version>1.3.0</version>
 		</dependency>
 		<dependency>
+			<groupId>com.machinezoo.closeablescope</groupId>
+			<artifactId>closeablescope</artifactId>
+			<version>1.0.0</version>
+		</dependency>
+		<dependency>
+			<groupId>com.machinezoo.noexception</groupId>
+			<artifactId>noexception</artifactId>
+			<version>1.9.0</version>
+		</dependency>
+		<dependency>
+			<groupId>com.machinezoo.pushmode</groupId>
+			<artifactId>pushmode</artifactId>
+			<version>0.8.3</version>
+		</dependency>
+		<dependency>
 			<groupId>com.machinezoo.pmsite</groupId>
 			<artifactId>pmsite</artifactId>
 			<version>0.18.6</version>
@@ -70,45 +85,14 @@
 			<version>0.8.1</version>
 		</dependency>
 		<dependency>
-			<groupId>com.esotericsoftware</groupId>
-			<artifactId>kryo</artifactId>
-			<version>5.2.0</version>
-		</dependency>
-		<dependency>
-			<groupId>org.jfree</groupId>
-			<artifactId>jfreechart</artifactId>
-			<version>1.5.3</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.xmlgraphics</groupId>
-			<artifactId>batik-dom</artifactId>
-			<version>1.14</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.xmlgraphics</groupId>
-			<artifactId>batik-svggen</artifactId>
-			<version>1.14</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.xmlgraphics</groupId>
-			<artifactId>batik-awt-util</artifactId>
-			<version>1.14</version>
-		</dependency>
-		<dependency>
-			<groupId>com.github.haifengl</groupId>
-			<artifactId>smile-plot</artifactId>
-			<version>2.6.0</version>
+			<groupId>it.unimi.dsi</groupId>
+			<artifactId>fastutil</artifactId>
+			<version>8.5.6</version>
 		</dependency>
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter</artifactId>
 			<version>5.8.2</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>com.github.valfirst</groupId>
-			<artifactId>slf4j-test</artifactId>
-			<version>2.3.0</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
@@ -155,8 +139,7 @@
 					</bottom>
 					<links>
 						<link>https://stagean.machinezoo.com/javadoc/</link>
-						<link>https://noexception.machinezoo.com/javadoc/</link>
-						<link>https://hookless.machinezoo.com/javadocs/core/</link>
+						<link>https://closeablescope.machinezoo.com/javadoc/</link>
 						<link>https://pushmode.machinezoo.com/javadoc/</link>
 					</links>
 				</configuration>
