@@ -1,5 +1,5 @@
-// Part of PMData: https://pmdata.machinezoo.com
-package com.machinezoo.pmdata.widgets;
+// Part of Meerkat Widgets: https://meerkatwidgets.machinezoo.com
+package com.machinezoo.meerkatwidgets;
 
 public class NoticeException extends WidgetException {
 	private static final long serialVersionUID = 1L;

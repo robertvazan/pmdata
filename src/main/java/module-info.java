@@ -1,6 +1,8 @@
-// Part of PMData: https://pmdata.machinezoo.com
-module com.machinezoo.pmdata {
-    exports com.machinezoo.pmdata.widgets;
+// Part of Meerkat Widgets: https://meerkatwidgets.machinezoo.com
+import com.machinezoo.stagean.*;
+@ApiIssue("We need a better way to expose CSS that does not also expose everything else in the package.")
+module com.machinezoo.meerkatwidgets {
+    exports com.machinezoo.meerkatwidgets;
     requires java.desktop;
     requires com.machinezoo.stagean;
     /*
@@ -23,4 +25,8 @@ module com.machinezoo.pmdata {
     requires transitive com.machinezoo.remorabindings;
     requires it.unimi.dsi.fastutil;
     requires one.util.streamex;
+    /*
+     * Predefined CSS in resources.
+     */
+    opens com.machinezoo.meerkatwidgets;
 }

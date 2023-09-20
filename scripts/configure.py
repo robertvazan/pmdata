@@ -5,13 +5,14 @@ import rvscaffold as scaffold
 
 class Project(scaffold.Java):
     def script_path_text(self): return __file__
-    def repository_name(self): return 'pmdata'
-    def pretty_name(self): return 'PMData'
-    def pom_description(self): return "Framework for reactive data-driven and data science websites."
-    def inception_year(self): return 2020
+    def repository_name(self): return 'meerkatwidgets'
+    def pretty_name(self): return 'Meerkat Widgets'
+    def pom_description(self): return "Collection of simple reactive HTML widgets for PushMode apps."
+    def inception_year(self): return 2023
     def jdk_version(self): return 17
     def has_javadoc(self): return False
     def stagean_annotations(self): return True
+    def has_website(self): return False
     
     def dependencies(self):
         yield from super().dependencies()

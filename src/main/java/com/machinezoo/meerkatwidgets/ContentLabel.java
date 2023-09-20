@@ -1,5 +1,5 @@
-// Part of PMData: https://pmdata.machinezoo.com
-package com.machinezoo.pmdata.widgets;
+// Part of Meerkat Widgets: https://meerkatwidgets.machinezoo.com
+package com.machinezoo.meerkatwidgets;
 
 import com.machinezoo.closeablescope.*;
 import com.machinezoo.pmsite.*;
