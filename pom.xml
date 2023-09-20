@@ -3,20 +3,20 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>com.machinezoo.pmdata</groupId>
-	<artifactId>pmdata</artifactId>
+	<groupId>com.machinezoo.foxcache</groupId>
+	<artifactId>foxcache</artifactId>
 	<version>0.12.5</version>
 
-	<name>PMData</name>
-	<description>Framework for reactive data-driven and data science websites.</description>
+	<name>Fox Cache</name>
+	<description>Reactive persistent cache for applications based on Hookless and especially PushMode.</description>
 
-	<url>https://pmdata.machinezoo.com/</url>
+	<url>https://foxcache.machinezoo.com/</url>
 	<inceptionYear>2020</inceptionYear>
 
 	<licenses>
 		<license>
 			<name>Apache-2.0</name>
-			<url>https://github.com/robertvazan/pmdata/blob/master/LICENSE</url>
+			<url>https://github.com/robertvazan/foxcache/blob/master/LICENSE</url>
 		</license>
 	</licenses>
 
@@ -33,9 +33,9 @@
 	</developers>
 
 	<scm>
-		<connection>scm:git:https://github.com/robertvazan/pmdata.git</connection>
-		<developerConnection>scm:git:https://github.com/robertvazan/pmdata.git</developerConnection>
-		<url>https://github.com/robertvazan/pmdata</url>
+		<connection>scm:git:https://github.com/robertvazan/foxcache.git</connection>
+		<developerConnection>scm:git:https://github.com/robertvazan/foxcache.git</developerConnection>
+		<url>https://github.com/robertvazan/foxcache</url>
 	</scm>
 
 	<properties>

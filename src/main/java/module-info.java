@@ -1,6 +1,6 @@
-// Part of PMData: https://pmdata.machinezoo.com
+// Part of Fox Cache: https://foxcache.machinezoo.com
 module com.machinezoo.pmdata {
-    exports com.machinezoo.pmdata.caching;
+    exports com.machinezoo.foxcache;
     requires com.machinezoo.stagean;
     /*
      * Transitive, because certain semi-internal but public APIs return CloseableScope.
@@ -26,5 +26,5 @@ module com.machinezoo.pmdata {
     /*
      * JSON descriptors of caches.
      */
-    opens com.machinezoo.pmdata.caching to com.google.gson;
+    opens com.machinezoo.foxcache to com.google.gson;
 }
