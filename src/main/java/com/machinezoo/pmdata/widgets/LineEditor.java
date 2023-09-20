@@ -2,9 +2,9 @@
 package com.machinezoo.pmdata.widgets;
 
 import java.util.*;
-import com.machinezoo.pmdata.bindings.*;
 import com.machinezoo.pmsite.*;
 import com.machinezoo.pushmode.dom.*;
+import com.machinezoo.remorabindings.*;
 import com.machinezoo.stagean.*;
 
 @DraftApi

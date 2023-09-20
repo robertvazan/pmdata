@@ -2,7 +2,6 @@
 module com.machinezoo.pmdata {
     exports com.machinezoo.pmdata;
     exports com.machinezoo.pmdata.caching;
-    exports com.machinezoo.pmdata.bindings;
     exports com.machinezoo.pmdata.widgets;
     exports com.machinezoo.pmdata.charts;
     requires java.desktop;
@@ -14,7 +13,6 @@ module com.machinezoo.pmdata {
     requires com.machinezoo.noexception;
     requires com.machinezoo.noexception.slf4j;
     requires com.machinezoo.hookless;
-    requires com.machinezoo.hookless.prefs;
     requires com.machinezoo.hookless.servlets;
     /*
      * Transitive, because widgets take and return DomContent.
@@ -25,6 +23,10 @@ module com.machinezoo.pmdata {
      */
     requires transitive com.machinezoo.pmsite;
     requires com.machinezoo.ladybugformatters;
+    /*
+     * Transitive, because widgets expose their bindings.
+     */
+    requires transitive com.machinezoo.remorabindings;
     /*
      * Transitive, because kryo configuration is exposed via ThreadLocalKryo.
      * There should be a better solution for this.

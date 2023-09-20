@@ -17,6 +17,7 @@ class Project(scaffold.Java):
         yield from super().dependencies()
         yield self.use_pmsite()
         yield self.use_ladybugformatters()
+        yield self.use_remorabindings()
         yield self.use_streamex()
         # Used to serialize cache content output.
         yield self.use('com.esotericsoftware:kryo:5.2.0')

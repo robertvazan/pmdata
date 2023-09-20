@@ -4,7 +4,7 @@ package com.machinezoo.pmdata.widgets;
 import java.util.*;
 import java.util.function.*;
 import java.util.stream.*;
-import com.machinezoo.pmdata.bindings.*;
+import com.machinezoo.remorabindings.*;
 import com.machinezoo.stagean.*;
 
 /*
