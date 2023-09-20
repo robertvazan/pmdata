@@ -17,7 +17,7 @@ class Project(scaffold.Java):
         yield from super().dependencies()
         yield self.use_pmsite()
         yield self.use_ladybugformatters()
-        yield self.use_remorabindings()
+        yield self.use_meerkatwidgets()
         yield self.use_streamex()
         # Used to serialize cache content output.
         yield self.use('com.esotericsoftware:kryo:5.2.0')
@@ -33,9 +33,6 @@ class Project(scaffold.Java):
     
     def javadoc_links(self):
         yield 'https://stagean.machinezoo.com/javadoc/'
-        yield 'https://noexception.machinezoo.com/javadoc/'
-        yield 'https://hookless.machinezoo.com/javadocs/core/'
-        yield 'https://pushmode.machinezoo.com/javadoc/'
         # PMSite does not have javadoc yet.
         # JFreeChart and Kryo not linked, because automatic modules are not supported by javadoc.
         # Smile plot not linked, because it is not a module yet.

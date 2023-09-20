@@ -11,7 +11,7 @@ import com.machinezoo.hookless.*;
 import com.machinezoo.hookless.time.*;
 import com.machinezoo.hookless.util.*;
 import com.machinezoo.ladybugformatters.*;
-import com.machinezoo.pmdata.widgets.*;
+import com.machinezoo.meerkatwidgets.*;
 import com.machinezoo.pmsite.*;
 import com.machinezoo.pmsite.utils.*;
 import com.machinezoo.pushmode.dom.*;
@@ -92,7 +92,7 @@ public class CacheReport {
                     info.worker = owner.worker;
                     /*
                      * Make sure the input we expand is the one recorded in CacheInfo.
-                     * 
+                     *
                      * Do not propagate blocking from CacheInput. It could be blocking for a long time or forever.
                      */
                     try (var nonblocking = ReactiveScope.nonblocking()) {

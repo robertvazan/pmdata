@@ -60,8 +60,8 @@
 			<version>0.1.1</version>
 		</dependency>
 		<dependency>
-			<groupId>com.machinezoo.remorabindings</groupId>
-			<artifactId>remorabindings</artifactId>
+			<groupId>com.machinezoo.meerkatwidgets</groupId>
+			<artifactId>meerkatwidgets</artifactId>
 			<version>0.1.0</version>
 		</dependency>
 		<dependency>
@@ -155,9 +155,6 @@
 					</bottom>
 					<links>
 						<link>https://stagean.machinezoo.com/javadoc/</link>
-						<link>https://noexception.machinezoo.com/javadoc/</link>
-						<link>https://hookless.machinezoo.com/javadocs/core/</link>
-						<link>https://pushmode.machinezoo.com/javadoc/</link>
 					</links>
 				</configuration>
 				<executions>

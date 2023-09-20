@@ -2,31 +2,19 @@
 module com.machinezoo.pmdata {
     exports com.machinezoo.pmdata;
     exports com.machinezoo.pmdata.caching;
-    exports com.machinezoo.pmdata.widgets;
     exports com.machinezoo.pmdata.charts;
     requires java.desktop;
     requires com.machinezoo.stagean;
-    /*
-     * Transitive, because we return CloseableScope from many methods.
-     */
-    requires transitive com.machinezoo.closeablescope;
     requires com.machinezoo.noexception;
     requires com.machinezoo.noexception.slf4j;
     requires com.machinezoo.hookless;
-    requires com.machinezoo.hookless.servlets;
+    requires com.machinezoo.pushmode;
     /*
-     * Transitive, because widgets take and return DomContent.
-     */
-    requires transitive com.machinezoo.pushmode;
-    /*
-     * Transitive, because several classes are used in the API: SitePage, SiteFragment, ...
+     * Transitive, because at least SitePage is used in the API.
      */
     requires transitive com.machinezoo.pmsite;
     requires com.machinezoo.ladybugformatters;
-    /*
-     * Transitive, because widgets expose their bindings.
-     */
-    requires transitive com.machinezoo.remorabindings;
+    requires com.machinezoo.meerkatwidgets;
     /*
      * Transitive, because kryo configuration is exposed via ThreadLocalKryo.
      * There should be a better solution for this.
@@ -45,8 +33,7 @@ module com.machinezoo.pmdata {
      */
     requires transitive org.jfree.jfreechart;
     /*
-     * SLF4J is pulled in transitively via noexception and hookless,
-     * but the transitive dependency will be removed in future versions of noexception.
+     * SLF4J is pulled in transitively via noexception-slf4j, but it's better to be explicit.
      */
     requires org.slf4j;
     /*
@@ -57,10 +44,6 @@ module com.machinezoo.pmdata {
     requires batik.dom;
     requires batik.svggen;
     requires batik.awt.util;
-    /*
-     * Predefined CSS in resources.
-     */
-    opens com.machinezoo.pmdata to com.machinezoo.pmsite;
     /*
      * JSON descriptors of caches.
      */

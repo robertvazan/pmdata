@@ -5,8 +5,8 @@ import java.awt.*;
 import java.io.*;
 import java.util.*;
 import org.jfree.chart.*;
+import com.machinezoo.meerkatwidgets.*;
 import com.machinezoo.noexception.*;
-import com.machinezoo.pmdata.widgets.*;
 
 public class JFreeChartImage {
 	private final JFreeChart chart;

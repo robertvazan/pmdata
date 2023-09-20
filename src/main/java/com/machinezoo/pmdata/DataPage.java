@@ -2,7 +2,7 @@
 package com.machinezoo.pmdata;
 
 import java.util.stream.*;
-import com.machinezoo.pmdata.widgets.*;
+import com.machinezoo.meerkatwidgets.*;
 import com.machinezoo.pmsite.*;
 import com.machinezoo.stagean.*;
 

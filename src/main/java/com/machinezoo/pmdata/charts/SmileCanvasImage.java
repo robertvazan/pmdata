@@ -4,8 +4,8 @@ package com.machinezoo.pmdata.charts;
 import java.io.*;
 import java.util.*;
 import javax.imageio.*;
+import com.machinezoo.meerkatwidgets.*;
 import com.machinezoo.noexception.*;
-import com.machinezoo.pmdata.widgets.*;
 import smile.plot.swing.*;
 
 public class SmileCanvasImage {
