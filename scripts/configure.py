@@ -24,13 +24,13 @@ class Project(scaffold.Java):
         yield self.use_guava()
         yield self.use_commons_lang()
         yield self.use_slf4j()
-        yield self.use('org.jfree:jfreechart:1.5.3')
+        yield self.use('org.jfree:jfreechart:1.5.4')
         # Batik is used to render charts into SVG.
-        batik_version = '1.14'
+        batik_version = '1.17'
         yield self.use(f'org.apache.xmlgraphics:batik-dom:{batik_version}')
         yield self.use(f'org.apache.xmlgraphics:batik-svggen:{batik_version}')
         yield self.use(f'org.apache.xmlgraphics:batik-awt-util:{batik_version}')
-        yield self.use('com.github.haifengl:smile-plot:2.6.0')
+        yield self.use('com.github.haifengl:smile-plot:3.0.2')
         yield self.use_junit()
         yield self.use_slf4j_test()
     
